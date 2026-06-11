@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>좋은강안병원 포상 관리 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #161922;
+  --surface2: #1e2330;
+  --border: #2a3040;
+  --text: #e8eaf0;
+  --text-muted: #8892a4;
+  --accent: #4f9cf9;
+  --gold: #f0b429;
+  --green: #38d9a9;
+  --purple: #9f7aea;
+  --red: #fc6d5a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+.header {
+  background:linear-gradient(135deg,#0d0f14 0%,#1a1f2e 100%);
+  border-bottom:1px solid var(--border);
+  padding:18px 32px;
+  display:flex; align-items:center; gap:16px;
+  position:sticky; top:0; z-index:100;
+  backdrop-filter:blur(20px);
+}
+.header-icon { width:44px;height:44px;background:linear-gradient(135deg,#4f9cf9,#9f7aea);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
+.header-title { font-family:'DM Serif Display',serif;font-size:20px;letter-spacing:-0.5px;background:linear-gradient(135deg,#e8eaf0,#8892a4);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.header-sub { font-size:11px;color:var(--text-muted);margin-top:2px; }
+.header-stats { margin-left:auto;display:flex;gap:20px;font-size:12px;color:var(--text-muted); }
+.header-stats span strong { color:var(--accent);font-size:17px;font-weight:700;display:block; }
+
+.tabs { background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;gap:4px;overflow-x:auto; }
+.tab { padding:13px 18px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.2s;display:flex;align-items:center;gap:7px; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+
+.main { padding:24px 32px;max-width:1400px;margin:0 auto; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* Stats */
+.stats-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px; }
+.stat-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s; }
+.stat-card:hover { transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4); }
+.stat-card::before { content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color,var(--accent)); }
+.stat-icon { font-size:26px;margin-bottom:8px; }
+.stat-number { font-size:30px;font-weight:900;color:var(--card-color,var(--accent));line-height:1; }
+.stat-label { font-size:11px;color:var(--text-muted);margin-top:4px; }
+
+/* Charts */
+.chart-section { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:22px; }
+.chart-title { font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:18px; }
+.year-bars { display:flex;align-items:flex-end;gap:8px;height:130px; }
+.year-bar-wrap { flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end; }
+.year-bar { width:100%;background:linear-gradient(180deg,var(--accent),rgba(79,156,249,0.3));border-radius:5px 5px 0 0;transition:all 0.3s;min-height:4px; }
+.year-bar:hover { background:linear-gradient(180deg,#74b7ff,rgba(79,156,249,0.5)); }
+.year-bar-count { font-size:11px;font-weight:700;color:var(--accent); }
+.year-bar-label { font-size:10px;color:var(--text-muted); }
+.top-section { display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px; }
+
+/* Filters */
+.filters { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end; }
+.filter-group { display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px; }
+.filter-label { font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:500; }
+.filter-input { background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s;width:100%; }
+.filter-input:focus { border-color:var(--accent); }
+.filter-input option { background:var(--surface2); }
+.result-count { font-size:12px;color:var(--text-muted);white-space:nowrap;align-self:center;margin-left:auto; }
+.result-count strong { color:var(--accent); }
+
+/* Table */
+.table-wrap { background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden; }
+table { width:100%;border-collapse:collapse;font-size:13px; }
+thead { background:var(--surface2); }
+th { padding:11px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap; }
+td { padding:10px 14px;border-bottom:1px solid rgba(42,48,64,0.6);vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(79,156,249,0.04); }
+
+/* Seq number */
+.seq-num { font-size:12px;color:var(--text-muted);font-weight:500;min-width:30px;display:inline-block;text-align:right; }
+.year-badge { background:rgba(79,156,249,0.15);color:var(--accent);font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px; }
+
+/* Badge */
+.badge { display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap; }
+.cat-10근속 { background:rgba(79,156,249,0.12);color:#4f9cf9; }
+.cat-20근속 { background:rgba(56,217,169,0.12);color:#38d9a9; }
+.cat-30근속 { background:rgba(169,227,75,0.12);color:#a9e34b; }
+.cat-유럽연수 { background:rgba(159,122,234,0.12);color:#9f7aea; }
+.cat-일본연수 { background:rgba(240,165,0,0.12);color:#f0a500; }
+.cat-친절왕 { background:rgba(247,131,172,0.12);color:#f783ac; }
+.cat-청결왕 { background:rgba(32,201,151,0.12);color:#20c997; }
+.cat-절약왕 { background:rgba(252,196,25,0.12);color:#fcc419; }
+.cat-모범직원 { background:rgba(255,146,43,0.12);color:#ff922b; }
+.cat-기타포상 { background:rgba(134,142,150,0.12);color:#868e96; }
+.cat-징계 { background:rgba(252,109,90,0.15);color:#fc6d5a; }
+.cat-미수상 { background:rgba(99,110,130,0.15);color:#8892a4; }
+
+/* Person cards */
+.card-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px; }
+.person-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;transition:all 0.2s; }
+.person-card:hover { border-color:rgba(79,156,249,0.4);box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+.person-card.resigned { opacity:0.6;border-color:rgba(252,109,90,0.2); }
+.person-card.reinstate { border-color:rgba(159,122,234,0.35); }
+.person-card.no-award { border-color:rgba(99,110,130,0.3);opacity:0.75; }
+.card-header { display:flex;align-items:center;gap:10px;margin-bottom:12px; }
+.card-avatar { width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0; }
+.card-avatar.gray { background:linear-gradient(135deg,#3a4050,#2a303c); }
+.card-name { font-size:15px;font-weight:700; }
+.card-dept { font-size:11px;color:var(--text-muted);margin-top:2px; }
+.card-tags { display:flex;flex-wrap:wrap;gap:5px; }
+.card-resigned { font-size:11px;color:var(--red);margin-top:8px;padding-top:8px;border-top:1px solid var(--border); }
+.card-noaward { font-size:11px;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-style:italic; }
+
+/* Category filter pills */
+.cat-pills { display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px; }
+.cat-pill { padding:7px 14px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid rgba(255,255,255,0.08);color:var(--text-muted);background:rgba(255,255,255,0.02);transition:all 0.2s;display:flex;align-items:center;gap:5px; }
+.cat-pill:hover { border-color:rgba(255,255,255,0.2);color:var(--text); }
+.cat-pill.active { background:rgba(79,156,249,0.15);color:#4f9cf9;border-color:rgba(79,156,249,0.4); }
+
+/* Pagination */
+.pagination { display:flex;align-items:center;justify-content:center;gap:6px;padding:18px;color:var(--text-muted);font-size:13px;flex-wrap:wrap; }
+.page-btn { padding:5px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer;font-size:12px;transition:all 0.2s; }
+.page-btn:hover { border-color:var(--accent);color:var(--accent); }
+.page-btn.active { background:var(--accent);color:#fff;border-color:var(--accent); }
+.page-btn:disabled { opacity:0.35;cursor:default; }
+
+.empty { text-align:center;padding:50px 20px;color:var(--text-muted); }
+.empty-icon { font-size:44px;margin-bottom:14px;opacity:0.5; }
+
+/* Checkbox filter group */
+.check-filter-box { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:14px; }
+.check-filter-title { font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px; }
+.check-row { display:flex;flex-wrap:wrap;gap:8px; }
+.check-item { display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.18s;font-size:12px;color:var(--text-muted);user-select:none; }
+.check-item:hover { border-color:rgba(255,255,255,0.18);color:var(--text); }
+.check-item.checked { background:rgba(79,156,249,0.12);border-color:rgba(79,156,249,0.45);color:var(--accent); }
+.check-item input[type=checkbox] { display:none; }
+.check-dot { width:8px;height:8px;border-radius:50%;background:currentColor;opacity:0.7; }
+.status-item.checked.status-재직 { background:rgba(56,217,169,0.1);border-color:rgba(56,217,169,0.4);color:#38d9a9; }
+.status-item.checked.status-퇴사 { background:rgba(252,109,90,0.1);border-color:rgba(252,109,90,0.4);color:#fc6d5a; }
+.status-item.checked.status-재입사 { background:rgba(159,122,234,0.1);border-color:rgba(159,122,234,0.4);color:#9f7aea; }
+.filter-reset-btn { margin-left:auto;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text-muted);font-size:11px;cursor:pointer;transition:all 0.2s; }
+.filter-reset-btn:hover { border-color:var(--accent);color:var(--accent); }
+.noaward-info-bar { background:rgba(99,110,130,0.1);border:1px solid rgba(99,110,130,0.25);border-radius:12px;padding:14px 20px;margin-bottom:14px;font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:8px; }
+
+/* ===== CATEGORY MODAL ===== */
+.modal-overlay { display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);z-index:999;backdrop-filter:blur(4px);align-items:center;justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--surface);border:1px solid var(--border);border-radius:18px;width:min(92vw,860px);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.6); }
+.modal-header { padding:20px 24px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0; }
+.modal-title { font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px; }
+.modal-close { width:32px;height:32px;border:none;background:rgba(255,255,255,0.06);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.2s; }
+.modal-close:hover { background:rgba(252,109,90,0.15);color:var(--red); }
+.modal-body { overflow-y:auto;padding:20px 24px;flex:1; }
+.modal-stats-row { display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px; }
+.modal-stat { background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center; }
+.modal-stat-num { font-size:24px;font-weight:900;color:var(--card-color,var(--accent)); }
+.modal-stat-label { font-size:11px;color:var(--text-muted);margin-top:3px; }
+.modal-table-wrap { background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden; }
+
+/* ===== EDIT/DELETE BUTTONS ===== */
+.action-btn { padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:all 0.18s;white-space:nowrap; }
+.btn-edit { border-color:rgba(79,156,249,0.4);color:var(--accent);background:rgba(79,156,249,0.08); }
+.btn-edit:hover { background:rgba(79,156,249,0.2); }
+.btn-delete { border-color:rgba(252,109,90,0.4);color:var(--red);background:rgba(252,109,90,0.08); }
+.btn-delete:hover { background:rgba(252,109,90,0.2); }
+
+/* ===== EDIT INLINE ROW ===== */
+.edit-row-input { background:var(--surface);border:1px solid rgba(79,156,249,0.4);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;width:100%; }
+.edit-row-input:focus { outline:none;border-color:var(--accent); }
+
+@media(max-width:768px) {
+  .top-section { grid-template-columns:1fr; }
+  .header { padding:14px;flex-wrap:wrap; }
+  .header-stats { display:none; }
+  .tabs { padding:0 14px; }
+  .main { padding:14px; }
+  .modal-box { border-radius:12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🏥</div>
+  <div>
+    <div class="header-title">좋은강안병원 포상 관리 시스템</div>
+    <div class="header-sub">2017 – 2026 포상 이력 관리</div>
+  </div>
+  <div class="header-stats">
+    <span><strong>438</strong>총 포상건</span>
+    <span><strong>303</strong>대상 인원</span>
+    <span><strong>10</strong>누적 연도</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('dashboard',this)">📊 대시보드</div>
+  <div class="tab" onclick="showPage('yearly',this)">📅 연도별 포상</div>
+  <div class="tab" onclick="showPage('people',this)">👤 개인별 이력</div>
+  <div class="tab" onclick="showPage('category',this)">🏅 유형별 조회</div>
+  <div class="tab" onclick="showPage('noaward',this)">🔍 미수상자 조회</div>
+  <div class="tab" onclick="showPage('datamgmt',this)">➕ 데이터 관리</div>
+</div>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="top-section">
+    <div class="chart-section">
+      <div class="chart-title">📈 연도별 포상 현황</div>
+      <div class="year-bars" id="yearChart"></div>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title">🥇 유형별 포상 분포</div>
+      <div id="catChart" style="display:flex;flex-direction:column;gap:7px;"></div>
+    </div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-title">📋 최근 5년 포상 요약</div>
+    <div class="table-wrap" style="margin-top:0;">
+      <table>
+        <thead><tr><th>연도</th><th>10년근속</th><th>20년근속</th><th>30년근속</th><th>유럽연수</th><th>일본연수</th><th>친절왕</th><th>청결왕</th><th>절약왕</th><th>모범직원</th><th>합계</th></tr></thead>
+        <tbody id="recentTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- YEARLY -->
+<div id="page-yearly" class="page">
+  <div class="filters">
+    <div class="filter-group" style="min-width:110px;max-width:130px;">
+      <div class="filter-label">연도</div>
+      <select class="filter-input" id="yearlyYearFilter" onchange="renderYearly()">
+        <option value="">전체</option>
+      </select>
+    </div>
+    <div class="filter-group" style="min-width:130px;max-width:170px;">
+      <div class="filter-label">포상 유형</div>
+      <select class="filter-input" id="yearlyCatFilter" onchange="renderYearly()">
+        <option value="">전체</option>
+      </select>
+    </div>
+    <div class="filter-group" style="min-width:180px;">
+      <div class="filter-label">이름 / 부서 검색</div>
+      <input type="text" class="filter-input" id="yearlySearch" placeholder="검색..." oninput="renderYearly()">
+    </div>
+    <div class="result-count" id="yearlyCount"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:50px;">연도</th>
+          <th style="width:44px;text-align:center;">순번</th>
+          <th>유형</th>
+          <th>이름</th>
+          <th>부서</th>
+          <th>직책</th>
+          <th>일시</th>
+          <th>포상내용</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody id="yearlyTableBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="yearlyPagination"></div>
+</div>
+
+<!-- PEOPLE -->
+<div id="page-people" class="page">
+  <div class="filters">
+    <div class="filter-group" style="min-width:200px;">
+      <div class="filter-label">이름 / 부서 / 포상내용 검색</div>
+      <input type="text" class="filter-input" id="peopleSearch" placeholder="검색..." oninput="renderPeople()">
+    </div>
+    <div class="filter-group" style="min-width:120px;max-width:150px;">
+      <div class="filter-label">재직 여부</div>
+      <select class="filter-input" id="peopleStatusFilter" onchange="renderPeople()">
+        <option value="">전체</option>
+        <option value="재직">재직 중</option>
+        <option value="퇴사">퇴사</option>
+        <option value="재입사">재입사</option>
+      </select>
+    </div>
+    <div class="result-count" id="peopleCount"></div>
+  </div>
+  <div class="card-grid" id="peopleGrid"></div>
+  <div class="pagination" id="peoplePagination"></div>
+</div>
+
+<!-- CATEGORY -->
+<div id="page-category" class="page">
+  <div class="cat-pills" id="catFilter"></div>
+  <div class="filters">
+    <div class="filter-group" style="min-width:110px;max-width:140px;">
+      <div class="filter-label">연도</div>
+      <select class="filter-input" id="catYearFilter" onchange="renderCategory()">
+        <option value="">전체</option>
+      </select>
+    </div>
+    <div class="filter-group" style="min-width:180px;">
+      <div class="filter-label">이름 / 부서 검색</div>
+      <input type="text" class="filter-input" id="catSearch" placeholder="검색..." oninput="renderCategory()">
+    </div>
+    <div class="result-count" id="catCount"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>연도</th>
+          <th style="width:44px;text-align:center;">순번</th>
+          <th>이름</th>
+          <th>부서</th>
+          <th>직책</th>
+          <th>포상유형</th>
+          <th>일시</th>
+          <th>선정기준</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody id="catTableBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="catPagination"></div>
+</div>
+
+<!-- NO AWARD -->
+<div id="page-noaward" class="page">
+  <div class="noaward-info-bar">
+    🔍 <strong style="color:var(--text);">미수상자 조회</strong> — 개별포상 전체정리 기준 중 선택한 조건에 해당하는 직원을 조회합니다. 조회 결과에 따라 연번이 자동으로 재부여됩니다.
+  </div>
+
+  <!-- 포상유형 체크박스 -->
+  <div class="check-filter-box">
+    <div class="check-filter-title">
+      🏅 포상 유형 미수상자 조회
+      <button class="filter-reset-btn" onclick="resetAwardChecks()">전체 선택 초기화</button>
+    </div>
+    <div class="check-row" id="awardCheckRow">
+      <label class="check-item checked" data-cat="any">
+        <input type="checkbox" checked onchange="renderNoAward()">
+        <span class="check-dot"></span> 포상/연수 전혀 없음
+      </label>
+      <label class="check-item" data-cat="10년근속">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> 🏆 10년 근속 미수상
+      </label>
+      <label class="check-item" data-cat="20년근속">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> 🥇 20년 근속 미수상
+      </label>
+      <label class="check-item" data-cat="30년근속">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> 💎 30년 근속 미수상
+      </label>
+      <label class="check-item" data-cat="유럽연수">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> ✈️ 유럽연수 미참가
+      </label>
+      <label class="check-item" data-cat="일본연수">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> 🗾 일본연수 미참가
+      </label>
+      <label class="check-item" data-cat="친절왕">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> 😊 친절왕 미수상
+      </label>
+      <label class="check-item" data-cat="청결왕">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> ✨ 청결왕 미수상
+      </label>
+      <label class="check-item" data-cat="절약왕">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> 💰 절약왕 미수상
+      </label>
+      <label class="check-item" data-cat="모범직원">
+        <input type="checkbox" onchange="renderNoAward()">
+        <span class="check-dot"></span> ⭐ 모범직원 미수상
+      </label>
+    </div>
+  </div>
+
+  <!-- 재직 여부 체크박스 -->
+  <div class="check-filter-box" style="padding:14px 22px;">
+    <div class="check-filter-title">👤 재직 여부</div>
+    <div class="check-row" id="statusCheckRow">
+      <label class="check-item status-item status-전체 checked" data-status="전체">
+        <input type="checkbox" checked onchange="handleStatusCheck('전체')">
+        <span class="check-dot"></span> 전체
+      </label>
+      <label class="check-item status-item status-재직" data-status="재직">
+        <input type="checkbox" onchange="handleStatusCheck('재직')">
+        <span class="check-dot"></span> 재직 중
+      </label>
+      <label class="check-item status-item status-퇴사" data-status="퇴사">
+        <input type="checkbox" onchange="handleStatusCheck('퇴사')">
+        <span class="check-dot"></span> 퇴사
+      </label>
+      <label class="check-item status-item status-재입사" data-status="재입사">
+        <input type="checkbox" onchange="handleStatusCheck('재입사')">
+        <span class="check-dot"></span> 재입사
+      </label>
+    </div>
+  </div>
+  <div class="filters" style="margin-bottom:14px;">
+    <div class="filter-group" style="min-width:200px;">
+      <div class="filter-label">이름 / 부서 / 직위 검색</div>
+      <input type="text" class="filter-input" id="noawardSearch" placeholder="이름, 부서, 직위..." oninput="renderNoAward()">
+    </div>
+    <div class="filter-group" style="min-width:200px;">
+      <div class="filter-label">보유 포상이력 내용 검색</div>
+      <input type="text" class="filter-input" id="noawardHistorySearch" placeholder="이력 키워드 (예: 유럽, 2023)..." oninput="renderNoAward()">
+    </div>
+    <div class="filter-group" style="min-width:130px;max-width:160px;">
+      <div class="filter-label">이력 보유 여부</div>
+      <select class="filter-input" id="noawardHasHistory" onchange="renderNoAward()">
+        <option value="">전체</option>
+        <option value="has">이력 있음</option>
+        <option value="none">이력 없음</option>
+      </select>
+    </div>
+    <div class="result-count" id="noawardCount" style="margin-left:auto;font-size:13px;"></div>
+    <button onclick="exportFilteredExcel()" style="padding:7px 16px;border-radius:7px;border:1px solid rgba(79,156,249,0.4);background:rgba(79,156,249,0.08);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📥 엑셀 다운로드</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:44px;text-align:center;">연번</th>
+          <th>이름</th>
+          <th>부서</th>
+          <th>직위</th>
+          <th>보유 포상 이력</th>
+          <th style="width:90px;text-align:center;">재직 여부</th>
+        </tr>
+      </thead>
+      <tbody id="noawardTableBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="noawardPagination"></div>
+</div>
+
+<!-- DATA MANAGEMENT -->
+<div id="page-datamgmt" class="page">
+  <div class="noaward-info-bar" style="background:rgba(79,156,249,0.08);border-color:rgba(79,156,249,0.25);">
+    ➕ <strong style="color:var(--text);">데이터 관리</strong> — 포상 이력 및 개인별 포상 현황 데이터를 추가·수정합니다. 추가된 데이터는 세션 내에서 즉시 반영됩니다.
+  </div>
+
+  <!-- 탭 전환 -->
+  <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+    <button class="dm-tab-btn active" onclick="switchDmTab('view',this)" id="dmTabView" style="padding:9px 20px;border-radius:9px;border:1.5px solid rgba(79,156,249,0.5);background:rgba(79,156,249,0.12);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;">🔎 데이터 조회</button>
+    <button class="dm-tab-btn" onclick="switchDmTab('award',this)" id="dmTabAward" style="padding:9px 20px;border-radius:9px;border:1.5px solid var(--border);background:rgba(255,255,255,0.02);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;">🏅 포상 기록 추가</button>
+    <button class="dm-tab-btn" onclick="switchDmTab('individual',this)" id="dmTabIndividual" style="padding:9px 20px;border-radius:9px;border:1.5px solid var(--border);background:rgba(255,255,255,0.02);color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;">👤 개인 포상현황 추가</button>
+  </div>
+
+  <!-- 데이터 조회 패널 -->
+  <div id="dmPanelView">
+    <!-- 조회 필터 -->
+    <div class="check-filter-box" style="padding:16px 22px;margin-bottom:14px;">
+      <div class="check-filter-title" style="font-size:13px;color:var(--text);margin-bottom:14px;">🔎 기존 데이터 조회 / 수정</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:12px;">
+        <div class="filter-group" style="min-width:100px;max-width:130px;">
+          <div class="filter-label">조회 대상</div>
+          <select class="filter-input" id="dmViewTarget" onchange="renderDmView()">
+            <option value="awards">📋 포상 기록</option>
+            <option value="individuals">👤 개인 현황</option>
+          </select>
+        </div>
+        <div class="filter-group" id="dmViewYearGroup" style="min-width:110px;max-width:140px;">
+          <div class="filter-label">연도</div>
+          <select class="filter-input" id="dmViewYear" onchange="renderDmView()">
+            <option value="">전체</option>
+          </select>
+        </div>
+        <div class="filter-group" id="dmViewCatGroup" style="min-width:130px;max-width:170px;">
+          <div class="filter-label">포상유형</div>
+          <select class="filter-input" id="dmViewCat" onchange="renderDmView()">
+            <option value="">전체</option>
+            <option value="10년근속">🏆 10년 근속</option>
+            <option value="20년근속">🥇 20년 근속</option>
+            <option value="30년근속">💎 30년 근속</option>
+            <option value="유럽연수">✈️ 유럽연수</option>
+            <option value="일본연수">🗾 일본연수</option>
+            <option value="친절왕">😊 친절왕</option>
+            <option value="청결왕">✨ 청결왕</option>
+            <option value="절약왕">💰 절약왕</option>
+            <option value="모범직원">⭐ 모범직원</option>
+            <option value="기타포상">🎖️ 기타포상</option>
+            <option value="징계">⚠️ 징계</option>
+          </select>
+        </div>
+        <div class="filter-group" style="min-width:120px;max-width:150px;">
+          <div class="filter-label">재직여부</div>
+          <select class="filter-input" id="dmViewStatus" onchange="renderDmView()">
+            <option value="">전체</option>
+            <option value="재직">재직 중</option>
+            <option value="퇴사">퇴사</option>
+            <option value="재입사">재입사</option>
+          </select>
+        </div>
+        <div class="filter-group" style="min-width:200px;">
+          <div class="filter-label">이름 / 부서 / 직위 검색</div>
+          <input class="filter-input" id="dmViewSearch" placeholder="검색..." oninput="renderDmView()">
+        </div>
+        <div style="color:var(--text-muted);font-size:12px;align-self:center;" id="dmViewCount"></div>
+      </div>
+    </div>
+    <!-- 조회 결과 테이블 -->
+    <div class="table-wrap" style="margin-bottom:14px;">
+      <table>
+        <thead id="dmViewTableHead"></thead>
+        <tbody id="dmViewTableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="dmViewPagination"></div>
+  </div>
+
+  <!-- 포상 기록 추가 폼 -->
+  <div id="dmPanelAward">
+    <div class="check-filter-box" style="padding:22px 26px;">
+      <div class="check-filter-title" style="font-size:13px;color:var(--text);margin-bottom:18px;">📝 새 포상 기록 입력</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px;">
+        <div class="filter-group">
+          <div class="filter-label">연도 *</div>
+          <select class="filter-input" id="dmAwardYear">
+            <option value="">선택</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">구분 *</div>
+          <select class="filter-input" id="dmAwardGubun">
+            <option value="포상">포상</option>
+            <option value="징계">징계</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">포상 유형 *</div>
+          <select class="filter-input" id="dmAwardCategory">
+            <option value="10년근속">🏆 10년 근속</option>
+            <option value="20년근속">🥇 20년 근속</option>
+            <option value="30년근속">💎 30년 근속</option>
+            <option value="유럽연수">✈️ 유럽연수</option>
+            <option value="일본연수">🗾 일본연수</option>
+            <option value="친절왕">😊 친절왕</option>
+            <option value="청결왕">✨ 청결왕</option>
+            <option value="절약왕">💰 절약왕</option>
+            <option value="모범직원">⭐ 모범직원</option>
+            <option value="기타포상">🎖️ 기타포상</option>
+            <option value="징계">⚠️ 징계</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">이름 *</div>
+          <input class="filter-input" id="dmAwardName" placeholder="예: 홍길동">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">부서 *</div>
+          <input class="filter-input" id="dmAwardDept" placeholder="예: 원무부">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">직책</div>
+          <input class="filter-input" id="dmAwardTitle" placeholder="예: 파트장">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">일시</div>
+          <input class="filter-input" id="dmAwardDate" placeholder="예: 26.04.16">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">포상내용</div>
+          <input class="filter-input" id="dmAwardContent" placeholder="예: 10년 근속상">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">선정기준</div>
+          <input class="filter-input" id="dmAwardCriteria" placeholder="예: 병원기안참고">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">비고</div>
+          <input class="filter-input" id="dmAwardRemark" placeholder="예: 순금3돈">
+        </div>
+      </div>
+      <button onclick="addAwardRecord()" style="padding:10px 24px;background:linear-gradient(135deg,var(--accent),#7ab4ff);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">➕ 포상 기록 추가</button>
+      <span id="dmAwardMsg" style="margin-left:14px;font-size:12px;"></span>
+    </div>
+  </div>
+
+  <!-- 개인 포상현황 추가 폼 -->
+  <div id="dmPanelIndividual" style="display:none;">
+    <div class="check-filter-box" style="padding:22px 26px;">
+      <div class="check-filter-title" style="font-size:13px;color:var(--text);margin-bottom:18px;">👤 개인 포상현황 신규 추가</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px;">
+        <div class="filter-group">
+          <div class="filter-label">이름 *</div>
+          <input class="filter-input" id="dmIndName" placeholder="예: 홍길동">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">부서 *</div>
+          <input class="filter-input" id="dmIndDept" placeholder="예: 원무부">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">직위</div>
+          <input class="filter-input" id="dmIndTitle" placeholder="예: 파트장">
+        </div>
+        <div class="filter-group" style="min-width:360px;">
+          <div class="filter-label">상벌내용</div>
+          <input class="filter-input" id="dmIndAwards" placeholder="예: 10년 근속(2026) / 유럽연수(2025)">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">퇴사여부</div>
+          <input class="filter-input" id="dmIndResign" placeholder="예) 2026.03.31 / 재입사(26.05.01)">
+        </div>
+      </div>
+      <button onclick="addIndividualRecord()" style="padding:10px 24px;background:linear-gradient(135deg,var(--green),#20e8b0);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">➕ 개인 현황 추가</button>
+      <span id="dmIndMsg" style="margin-left:14px;font-size:12px;"></span>
+    </div>
+  </div>
+
+  <!-- 최근 추가 내역 -->
+  <div class="check-filter-box" style="margin-top:14px;">
+    <div class="check-filter-title" style="font-size:13px;color:var(--text);margin-bottom:14px;">
+      📋 세션 중 추가된 기록
+      <span id="dmAddedCount" style="margin-left:8px;font-size:11px;color:var(--text-muted);">0건</span>
+      <button onclick="exportFilteredExcel()" style="margin-left:auto;padding:7px 16px;border-radius:7px;border:1px solid rgba(79,156,249,0.4);background:rgba(79,156,249,0.1);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">📥 현재 미수상자 조회 결과 엑셀 다운로드</button>
+      <button onclick="exportAllExcel()" style="margin-left:8px;padding:7px 16px;border-radius:7px;border:1px solid rgba(56,217,169,0.4);background:rgba(56,217,169,0.1);color:var(--green);font-size:12px;font-weight:600;cursor:pointer;">📊 전체 포상 데이터 엑셀 다운로드</button>
+    </div>
+    <div id="dmRecentList" style="font-size:12px;color:var(--text-muted);">아직 추가된 기록이 없습니다.</div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ===== 카테고리 현황 모달 ===== -->
+<div class="modal-overlay" id="catModal" onclick="if(event.target===this)closeCatModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">카테고리 현황</div>
+      <button class="modal-close" onclick="closeCatModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stats-row" id="modalStatsRow"></div>
+      <div class="modal-table-wrap">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead id="modalTableHead" style="background:var(--surface);"></thead>
+          <tbody id="modalTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 개인 이력 수정 모달 ===== -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">✏️ 개인 이력 수정</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div class="filter-group">
+          <div class="filter-label">이름 *</div>
+          <input class="filter-input" id="editName" placeholder="이름">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">부서 *</div>
+          <input class="filter-input" id="editDept" placeholder="부서">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">직위</div>
+          <input class="filter-input" id="editTitle" placeholder="직위">
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">퇴사여부</div>
+          <input class="filter-input" id="editResign" placeholder="예) 2026.03.31 / 재입사(26.05.01)">
+        </div>
+        <div class="filter-group" style="grid-column:1/-1;">
+          <div class="filter-label">상벌내용</div>
+          <textarea class="filter-input" id="editAwards" rows="3" placeholder="예: 10년 근속(2026) / 유럽연수(2025)" style="resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onclick="closeEditModal()" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text-muted);font-size:13px;cursor:pointer;">취소</button>
+        <button onclick="saveEditModal()" style="padding:8px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--accent),#7ab4ff);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">저장</button>
+      </div>
+      <div id="editModalMsg" style="margin-top:10px;font-size:12px;text-align:right;"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const AWARDS = [{"연도": "2026", "구분": "포상", "내용": "26.01 절약왕", "일시": "26.02", "부서": "원무부", "직책": "파트원", "이름": "서미지", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 1}, {"연도": "2026", "구분": "포상", "내용": "26.02 청결왕", "일시": "26.03", "부서": "건강증진센터", "직책": "간호조무사", "이름": "장은정", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 2}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "발달의학센터", "직책": "부소장", "이름": "윤혜경", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 3}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "심사팀", "직책": "파트장", "이름": "구영화", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 4}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "심장센터", "직책": "간호사", "이름": "유혜진", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 5}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "8병동", "직책": "간호사", "이름": "이혜란", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 6}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "신경과 외래", "직책": "간호조무사", "이름": "문해숙", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 7}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "치과외래", "직책": "치위생사", "이름": "김선영", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 8}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "수술실", "직책": "간호조무사", "이름": "박원철", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 9}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "소화기내과 외래", "직책": "간호조무사", "이름": "김효영", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 10}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "소화기내과", "직책": "진료과장", "이름": "오숙경", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 11}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "원무부", "직책": "파트원", "이름": "김경환", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 12}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "9병동", "직책": "간호사", "이름": "최예솔", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 13}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "시설관리팀", "직책": "시설기사", "이름": "박덕희", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 14}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "신경과", "직책": "진료과장", "이름": "이주호", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 15}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "정형외과 외래", "직책": "간호사", "이름": "김봉수", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 16}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "수술실", "직책": "간호사", "이름": "최혜원", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 17}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "재활의학과 외래", "직책": "간호조무사", "이름": "남윤아", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 18}, {"연도": "2026", "구분": "포상", "내용": "10년 근속상", "일시": "26.04.15", "부서": "소롸기내과", "직책": "진료과장", "이름": "고민석", "선정기준": "병원기안참고", "비고": "순금3돈", "category": "10년근속", "연번": 19}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "수술실", "직책": "간호사", "이름": "곽민희", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 20}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "수술실", "직책": "책임간호사", "이름": "김혜선", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 21}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "10병동", "직책": "수간호사", "이름": "임미영", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 22}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "QPS실", "직책": "팀장", "이름": "김제연", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 23}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "12병동", "직책": "수간호사", "이름": "전홍희", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 24}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "정신건강의학과", "직책": "진료과장", "이름": "이동기", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 25}, {"연도": "2026", "구분": "포상", "내용": "20년 근속상", "일시": "26.04.15", "부서": "진단검사의학과", "직책": "진료과장", "이름": "서우영", "선정기준": "병원기안참고", "비고": "공로패", "category": "20년근속", "연번": 26}, {"연도": "2026", "구분": "포상", "내용": "30년 근속상", "일시": "26.04.15", "부서": "진단검사의학팀", "직책": "팀장", "이름": "김삼록", "선정기준": "병원기안참고", "비고": "공로패", "category": "30년근속", "연번": 27}, {"연도": "2026", "구분": "포상", "내용": "30년 근속상", "일시": "26.04.15", "부서": "행정부", "직책": "사무국장", "이름": "김용정", "선정기준": "병원기안참고", "비고": "공로패", "category": "30년근속", "연번": 28}, {"연도": "2026", "구분": "포상", "내용": "30년 근속상", "일시": "26.04.15", "부서": "영상의학팀", "직책": "팀장", "이름": "김타현", "선정기준": "병원기안참고", "비고": "공로패", "category": "30년근속", "연번": 29}, {"연도": "2026", "구분": "포상", "내용": "개원기념 모범직원", "일시": "26.04.15", "부서": "건강증진센터", "직책": "팀장", "이름": "박창형", "선정기준": "병원기안참고", "비고": "해외연수기회제공", "category": "모범직원", "연번": 30}, {"연도": "2026", "구분": "포상", "내용": "개원기념 모범직원", "일시": "26.04.15", "부서": "국제협력팀", "직책": "팀장", "이름": "박창순", "선정기준": "병원기안참고", "비고": "해외연수기회제공", "category": "모범직원", "연번": 31}, {"연도": "2026", "구분": "포상", "내용": "개원기념 모범직원", "일시": "26.04.15", "부서": "A10병동", "직책": "수간호사업무대행", "이름": "구은정", "선정기준": "병원기안참고", "비고": "해외연수기회제공", "category": "모범직원", "연번": 32}, {"연도": "2026", "구분": "포상", "내용": "개원기념 모범직원", "일시": "26.04.15", "부서": "11병동", "직책": "책임간호사", "이름": "김은미", "선정기준": "병원기안참고", "비고": "해외연수기회제공", "category": "모범직원", "연번": 33}, {"연도": "2025", "구분": "포상", "내용": "25.01 친절왕", "일시": "25.02", "부서": "건강증진센터", "직책": "파트장", "이름": "이아름B", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 1}, {"연도": "2025", "구분": "포상", "내용": "25.02 청결왕", "일시": "25.03", "부서": "9병동", "직책": "간호사", "이름": "한지혜", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 2}, {"연도": "2025", "구분": "포상", "내용": "25.04 청결왕", "일시": "25.05", "부서": "원무부", "직책": "파트원", "이름": "윤혜원", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 3}, {"연도": "2025", "구분": "포상", "내용": "25.05 친절왕", "일시": "25.06", "부서": "A10병동", "직책": "간호조무사", "이름": "송지혜", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 4}, {"연도": "2025", "구분": "포상", "내용": "25.06 절약왕", "일시": "25.07", "부서": "시설관리팀", "직책": "시설설비기사", "이름": "장홍식", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 5}, {"연도": "2025", "구분": "포상", "내용": "25.07 청결왕", "일시": "25.08", "부서": "미화부", "직책": "사원", "이름": "김인자", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 6}, {"연도": "2025", "구분": "포상", "내용": "25.08 친절왕", "일시": "25.09", "부서": "구매관리팀", "직책": "파트원", "이름": "옥창희", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 7}, {"연도": "2025", "구분": "포상", "내용": "25.09 절약왕", "일시": "25.10", "부서": "13병동", "직책": "간호사", "이름": "박수빈", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 8}, {"연도": "2025", "구분": "포상", "내용": "25.10 청결왕", "일시": "25.11", "부서": "7병동", "직책": "간호사", "이름": "최영선", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 9}, {"연도": "2025", "구분": "포상", "내용": "25.11 친절왕", "일시": "25.12", "부서": "건강증진센터", "직책": "파트원", "이름": "김준오", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 10}, {"연도": "2025", "구분": "포상", "내용": "25년 최다미담상", "일시": "25.12", "부서": "신경외과", "직책": "진료과장", "이름": "이영헌", "선정기준": "병원기안참고", "비고": "상품권 10만원", "category": "기타포상", "연번": 11}, {"연도": "2025", "구분": "포상", "내용": "25년 탑 칭찬스타상", "일시": "25.12", "부서": "구매관리팀", "직책": "파트원", "이름": "옥창희", "선정기준": "병원기안참고", "비고": "상품권 10만원", "category": "기타포상", "연번": 12}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "순환기내과", "직책": "진료과장", "이름": "이준상", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 13}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "가정의학과", "직책": "진료과장", "이름": "박다정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 14}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "정다해", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 15}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "안지혜", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 16}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "김승혜", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 17}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "원무부", "직책": "파트원", "이름": "이상빈", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 18}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "건강증진센터", "직책": "파트장", "이름": "박순영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 19}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "6병동", "직책": "간호사", "이름": "최혜정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 20}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "9병동", "직책": "책임간호사", "이름": "이세영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 21}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "응급실", "직책": "책임간호사", "이름": "이영희", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 22}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "인공신장실", "직책": "책임간호사", "이름": "김지안", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 23}, {"연도": "2025", "구분": "포상", "내용": "10년 근속상", "일시": "25.04.16", "부서": "외래", "직책": "간호사", "이름": "장윤진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 24}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "소화기내과", "직책": "진료과장", "이름": "이동현", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 25}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "소아청소년과", "직책": "진료과장", "이름": "이영아", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 26}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "영상의학과", "직책": "진료과장", "이름": "이승룡", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 27}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "마취통증의학과", "직책": "진료과장", "이름": "이현섭", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 28}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "전산운영팀", "직책": "부장", "이름": "정성관", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 29}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "전산운영팀", "직책": "파트장", "이름": "이동원", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 30}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "원무부", "직책": "팀장", "이름": "김나미", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 31}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "심사팀", "직책": "파트장", "이름": "안정애", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 32}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "국제협력팀", "직책": "팀장", "이름": "박창순", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 33}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "재무팀", "직책": "팀장", "이름": "김종미", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 34}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "시설관리팀", "직책": "팀장", "이름": "이주호", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 35}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "시설관리팀", "직책": "파트장", "이름": "허성욱", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 36}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "신지숙", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 37}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "주성도", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 38}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "약제팀", "직책": "주임", "이름": "박혜경", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 39}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "간호부", "직책": "부장", "이름": "김경미", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 40}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "간호부", "직책": "과장", "이름": "공수영", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 41}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "9병동", "직책": "수간호사", "이름": "박지민", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 42}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "인공신장실", "직책": "간호팀장", "이름": "반혜정", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 43}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "수술실", "직책": "책임간호사", "이름": "권주현", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 44}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "소화기내시경센터", "직책": "수간호사", "이름": "조영선", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 45}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "외래", "직책": "간호사", "이름": "정지영", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 46}, {"연도": "2025", "구분": "포상", "내용": "20년 근속상", "일시": "25.04.16", "부서": "외래", "직책": "주임조무사", "이름": "강주영", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 47}, {"연도": "2025", "구분": "포상", "내용": "30년 근속상", "일시": "25.04.16", "부서": "행정부", "직책": "경영부원장", "이름": "문나겸", "선정기준": "병원기안참고", "비고": "순금 10돈", "category": "30년근속", "연번": 48}, {"연도": "2025", "구분": "포상", "내용": "30년 근속상", "일시": "25.04.16", "부서": "심사팀", "직책": "부장", "이름": "정현주", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "30년근속", "연번": 49}, {"연도": "2025", "구분": "포상", "내용": "개원기념 모범직원", "일시": "25.04.16", "부서": "재무팀", "직책": "파트장", "이름": "조민제", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 50}, {"연도": "2025", "구분": "포상", "내용": "개원기념 모범직원", "일시": "25.04.16", "부서": "원무부", "직책": "팀장", "이름": "김나미", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 51}, {"연도": "2025", "구분": "포상", "내용": "개원기념 모범직원", "일시": "25.04.16", "부서": "5병동", "직책": "수간호사", "이름": "이지현", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 52}, {"연도": "2025", "구분": "포상", "내용": "개원기념 모범직원", "일시": "25.04.16", "부서": "6병동", "직책": "수간호사", "이름": "박현정", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 53}, {"연도": "2025", "구분": "포상", "내용": "일본연수", "일시": "25.09.16", "부서": "주사실", "직책": "간호사", "이름": "이지란", "선정기준": "병원기안참고", "비고": "일본연수", "category": "일본연수", "연번": 54}, {"연도": "2025", "구분": "포상", "내용": "일본연수", "일시": "25.09.16", "부서": "건강증진센터", "직책": "파트장", "이름": "이아름", "선정기준": "병원기안참고", "비고": "일본연수", "category": "일본연수", "연번": 55}, {"연도": "2025", "구분": "포상", "내용": "일본연수", "일시": "25.09.16", "부서": "9병동", "직책": "간호사", "이름": "한지혜", "선정기준": "병원기안참고", "비고": "일본연수", "category": "일본연수", "연번": 56}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "진단검사의학과", "직책": "진료과장", "이름": "서우영", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 57}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "소아청소년과", "직책": "진료과장", "이름": "이영아", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 58}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "수술실", "직책": "간호사", "이름": "곽민희", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 59}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "7병동", "직책": "간호사", "이름": "추수명", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 60}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "6병동", "직책": "수간호사", "이름": "박현정", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 61}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "산부인과 외래", "직책": "간호조무사", "이름": "이수경", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 62}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "영상의학팀", "직책": "주임 방사선사", "이름": "현상원", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 63}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.03", "부서": "약제팀", "직책": "사원", "이름": "주다솜", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 64}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "비뇨의학과", "직책": "진료과장", "이름": "서정빈", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 65}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "영상의학과", "직책": "진료과장", "이름": "이승룡", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 66}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "수술실", "직책": "책임간호사", "이름": "김혜선", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 67}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "5병동", "직책": "수간호사", "이름": "이지현", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 68}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "소화기내과 외래", "직책": "간호조무사", "이름": "김효영", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 69}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "심사팀", "직책": "부장", "이름": "정현주", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 70}, {"연도": "2025", "구분": "포상", "내용": "유럽연수", "일시": "25.11.10", "부서": "의료정보팀", "직책": "보건의료정보관리사", "이름": "조혜림", "선정기준": "병원기안참고", "비고": "프랑스 파리 연수", "category": "유럽연수", "연번": 71}, {"연도": "2024", "구분": "포상", "내용": "24.01 친절왕", "일시": "24.02.14", "부서": "11병동", "직책": "간호조무사", "이름": "양현미", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 1}, {"연도": "2024", "구분": "포상", "내용": "24.02 청결왕", "일시": "24.03.13", "부서": "원무부", "직책": "주임", "이름": "채진주", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 2}, {"연도": "2024", "구분": "포상", "내용": "24.03 절약왕", "일시": "24.04.16", "부서": "외래", "직책": "간호조무사", "이름": "김창순", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 3}, {"연도": "2024", "구분": "포상", "내용": "24.04 친절왕", "일시": "24.05.08", "부서": "재활치료팀", "직책": "물리치료사", "이름": "손영환", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 4}, {"연도": "2024", "구분": "포상", "내용": "24.05 청결왕", "일시": "24.06.12", "부서": "외래", "직책": "간호조무사", "이름": "김상은", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 5}, {"연도": "2024", "구분": "포상", "내용": "24.06 절약왕", "일시": "24.07.01", "부서": "인공신장실", "직책": "책임간호사", "이름": "안소희", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 6}, {"연도": "2024", "구분": "포상", "내용": "24.07 친절왕", "일시": "24.08.01", "부서": "원무부", "직책": "파트원", "이름": "여혜진", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 7}, {"연도": "2024", "구분": "포상", "내용": "24.08 청결왕", "일시": "24.09.01", "부서": "진단검사의학팀", "직책": "임상병리사", "이름": "오진솔", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 8}, {"연도": "2024", "구분": "포상", "내용": "24.09 절약왕", "일시": "24.10.01", "부서": ".응급실", "직책": "간호사", "이름": "공민주", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 9}, {"연도": "2024", "구분": "포상", "내용": "24.10 친절왕", "일시": "24.11.01", "부서": "9병동", "직책": "간호사", "이름": "김민지", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 10}, {"연도": "2024", "구분": "포상", "내용": "24.11 청결왕", "일시": "24.12.01", "부서": "주사실", "직책": "간호사", "이름": "이지란", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 11}, {"연도": "2024", "구분": "포상", "내용": "24.12 절약왕", "일시": "25.01.01", "부서": "11병동", "직책": "간호사", "이름": "김지현", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 12}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "소아청소년과", "직책": "진료과장", "이름": "박지애", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 13}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "신경외과", "직책": "진료과장", "이름": "전상호", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 14}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "영상의학과", "직책": "진료과장", "이름": "이상희", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 15}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "재활의학과", "직책": "진료과장", "이름": "이상진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 16}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "정형외과", "직책": "진료과장", "이름": "허현", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 17}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "호흡기내과", "직책": "진료과장", "이름": "서현택", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 18}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "10병동", "직책": "간호사", "이름": "강민지", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 19}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "10병동", "직책": "간호사", "이름": "염민희", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 20}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "12병동", "직책": "책임간호사", "이름": "김진하", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 21}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "8병동", "직책": "책임간호사", "이름": "황정혜", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 22}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "수술실", "직책": "간호조무사", "이름": "우중일", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 23}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "수술실", "직책": "간호사", "이름": "이아름", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 24}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "수술실", "직책": "간호조무사", "이름": "천상진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 25}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "인공신장실", "직책": "간호사", "이름": "김지수", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 26}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "인공신장실", "직책": "간호사", "이름": "이윤정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 27}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "인공신장실", "직책": "책임간호사", "이름": "황지현", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 28}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "외래", "직책": "간호조무사", "이름": "김경미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 29}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "영양팀", "직책": "조리사", "이름": "이분순", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 30}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "진단검사의학팀", "직책": "주임", "이름": "노가람", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 31}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "24.04.16", "부서": "기획총무팀", "직책": "파트원", "이름": "최하늘", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 32}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "", "부서": "재활치료팀", "직책": "물리치료사", "이름": "김승헤", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 33}, {"연도": "2024", "구분": "포상", "내용": "10년 근속상", "일시": "", "부서": "응급실", "직책": "책임간호사", "이름": "이영희", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 34}, {"연도": "2024", "구분": "포상", "내용": "20년 근속상", "일시": "24.04.16", "부서": "비뇨의학과", "직책": "진료과장", "이름": "서정빈", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 35}, {"연도": "2024", "구분": "포상", "내용": "20년 근속상", "일시": "24.04.16", "부서": "수술실", "직책": "책임간호사", "이름": "정혜영", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 36}, {"연도": "2024", "구분": "포상", "내용": "개원기념 모범직원", "일시": "24.04.16", "부서": "원무부", "직책": "팀장", "이름": "이준희", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 37}, {"연도": "2024", "구분": "포상", "내용": "개원기념 모범직원", "일시": "24.04.16", "부서": "영양팀", "직책": "팀장", "이름": "조미선", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 38}, {"연도": "2024", "구분": "포상", "내용": "개원기념 모범직원", "일시": "24.04.16", "부서": "10병동", "직책": "수간호사", "이름": "임미영", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 39}, {"연도": "2024", "구분": "포상", "내용": "개원기념 모범직원", "일시": "24.04.16", "부서": "8병동", "직책": "수간호사", "이름": "안선애", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 40}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.05.28", "부서": "건강증진센터", "직책": "팀장", "이름": "박창형", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 41}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.05.28", "부서": "병리팀", "직책": "임상병리사", "이름": "김현", "선정기준": "병원기안참고", "비고": "청결왕", "category": "일본연수", "연번": 42}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.05.28", "부서": "재활치료팀", "직책": "물리치료사", "이름": "김가영", "선정기준": "병원기안참고", "비고": "절약왕", "category": "일본연수", "연번": 43}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.05.28", "부서": "원무부", "직책": "팀장", "이름": "김대욱", "선정기준": "병원기안참고", "비고": "단장", "category": "일본연수", "연번": 44}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.07.09", "부서": "11병동", "직책": "간호조무사", "이름": "양현미", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 45}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.07.09", "부서": "외래", "직책": "간호조무사", "이름": "김창순", "선정기준": "병원기안참고", "비고": "절약왕", "category": "일본연수", "연번": 46}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.07.09", "부서": "재활치료팀", "직책": "물리치료사", "이름": "손영환", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 47}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.07.09", "부서": "10병동", "직책": "수간호사", "이름": "임미영", "선정기준": "병원기안참고", "비고": "모범직원", "category": "일본연수", "연번": 48}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.07.09", "부서": "기획총무팀", "직책": "팀장", "이름": "정영부", "선정기준": "병원기안참고", "비고": "단장", "category": "일본연수", "연번": 49}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "외래", "직책": "책임간호사", "이름": "정지영", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 50}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "재활치료팀", "직책": "주임 작업치료사", "이름": "이종수", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 51}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "영상의학팀", "직책": "주임 방사선사", "이름": "주성도", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 52}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "약제팀", "직책": "주임", "이름": "이정수", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 53}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "외래", "직책": "간호조무사", "이름": "조여진", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 54}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "원무부", "직책": "팀장", "이름": "이준희", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 55}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.01", "부서": "외래", "직책": "주임 간호조무사", "이름": "강주영", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 56}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "약제팀", "직책": "주임", "이름": "박혜경", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 57}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "영양팀", "직책": "팀장", "이름": "조미선", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 58}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "진단검사의학팀", "직책": "팀장", "이름": "김삼록", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 59}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "수술실", "직책": "책임간호사", "이름": "권주현", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 60}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "8병동", "직책": "수간호사", "이름": "안선애", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 61}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "9병동", "직책": "책임간호사", "이름": "이세영", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 62}, {"연도": "2024", "구분": "포상", "내용": "유럽연수", "일시": "24.11.15", "부서": "시설관리팀", "직책": "기사", "이름": "이준영", "선정기준": "병원기안참고", "비고": "유럽연수(스페인)", "category": "유럽연수", "연번": 63}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.12.11", "부서": "핵의학과외래", "직책": "간호조무사", "이름": "김상은", "선정기준": "병원기안참고", "비고": "청결왕", "category": "일본연수", "연번": 64}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.12.11", "부서": "인공신장실", "직책": "책임간호사", "이름": "안소희", "선정기준": "병원기안참고", "비고": "절약왕", "category": "일본연수", "연번": 65}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.12.11", "부서": "원무부", "직책": "파트원", "이름": "여혜진", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 66}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.12.11", "부서": "진단검사의학팀", "직책": "임상병리사", "이름": "오진솔", "선정기준": "병원기안참고", "비고": "청결왕", "category": "일본연수", "연번": 67}, {"연도": "2024", "구분": "포상", "내용": "일본연수", "일시": "24.12.11", "부서": "응급실", "직책": "간호사", "이름": "공민주", "선정기준": "병원기안참고", "비고": "절약왕", "category": "일본연수", "연번": 68}, {"연도": "2023", "구분": "포상", "내용": "23.01 친절왕", "일시": "23.02.08", "부서": "원무부", "직책": "파트원", "이름": "김은혜", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 1}, {"연도": "2023", "구분": "포상", "내용": "23.02 친절왕", "일시": "23.03.08", "부서": "외래", "직책": "간호사", "이름": "장지원", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 2}, {"연도": "2023", "구분": "포상", "내용": "23.04 친절왕", "일시": "23.05.10", "부서": "10병동", "직책": "간호조무사", "이름": "송배원", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 3}, {"연도": "2023", "구분": "포상", "내용": "23.05 청결왕", "일시": "23.06.14", "부서": "미화부", "직책": "사원", "이름": "류소홍", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 4}, {"연도": "2023", "구분": "포상", "내용": "23.06.절약왕", "일시": "23.07.11", "부서": "재무팀", "직책": "파트장", "이름": "김현정", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 5}, {"연도": "2023", "구분": "포상", "내용": "23.07 친절왕", "일시": "23.08.09", "부서": "건강증진센터", "직책": "파트장", "이름": "박창형", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 6}, {"연도": "2023", "구분": "포상", "내용": "23.08 청결왕", "일시": "23.09.13", "부서": "12병동", "직책": "간호사", "이름": "조민지", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 7}, {"연도": "2023", "구분": "포상", "내용": "23.09 절약왕", "일시": "23.10.11", "부서": "외래", "직책": "간호조무사", "이름": "김민재", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 8}, {"연도": "2023", "구분": "포상", "내용": "23.10 친절왕", "일시": "23.11.08", "부서": "6병동", "직책": "간호사", "이름": "안정민", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 9}, {"연도": "2023", "구분": "포상", "내용": "23.11 청결왕", "일시": "24.12.13", "부서": "병리팀", "직책": "임상병리사", "이름": "김현", "선정기준": "청결위원회 선정", "비고": "일본연수기회제공", "category": "청결왕", "연번": 10}, {"연도": "2023", "구분": "포상", "내용": "23.12 절약왕", "일시": "24.01.02", "부서": "재활치료팀", "직책": "물리치료사", "이름": "김가영", "선정기준": "절약위원회 선정", "비고": "일본연수기회제공", "category": "절약왕", "연번": 11}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "진료부", "직책": "진료과장", "이름": "권영민", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 12}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "진료부", "직책": "진료과장", "이름": "임영배", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 13}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "약제팀", "직책": "주임", "이름": "정남경", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 14}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "이미현", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 15}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "김지우", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 16}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "진단검사의학팀", "직책": "주임", "이름": "허승아", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 17}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "시설관리팀", "직책": "주임", "이름": "김정훈", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 18}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "시설관리팀", "직책": "사원", "이름": "이준영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 19}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "원무부", "직책": "주임", "이름": "여혜진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 20}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "원무심사팀", "직책": "주임", "이름": "김규리", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 21}, {"연도": "2023", "구분": "포상", "내용": "10년 근속상", "일시": "23.04.16", "부서": "A7병동", "직책": "책임간호사", "이름": "구은정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 22}, {"연도": "2023", "구분": "포상", "내용": "20년 근속상", "일시": "23.04.16", "부서": "구매관리팀", "직책": "파트장", "이름": "강기선", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 23}, {"연도": "2023", "구분": "포상", "내용": "20년 근속상", "일시": "23.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "이학경", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 24}, {"연도": "2023", "구분": "포상", "내용": "20년 근속상", "일시": "23.04.16", "부서": "약제팀", "직책": "주임", "이름": "김순지", "선정기준": "병원기안참고", "비고": "유럽연수기회제공", "category": "20년근속", "연번": 25}, {"연도": "2023", "구분": "포상", "내용": "개원기념 모범직원", "일시": "23.04.16", "부서": "10병동", "직책": "수간호사", "이름": "강경진", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 26}, {"연도": "2023", "구분": "포상", "내용": "개원기념 모범직원", "일시": "23.04.16", "부서": "건강증진센터", "직책": "파트장", "이름": "김지영", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 27}, {"연도": "2023", "구분": "포상", "내용": "개원기념 모범직원", "일시": "23.04.16", "부서": "원무부", "직책": "팀장", "이름": "김대욱", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 28}, {"연도": "2023", "구분": "포상", "내용": "개원기념 모범직원", "일시": "23.04.16", "부서": "기획총무팀", "직책": "파트장", "이름": "박성미", "선정기준": "병원기안참고", "비고": "일본연수기회제공", "category": "모범직원", "연번": 29}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.20", "부서": "약제팀", "직책": "주임", "이름": "정남경", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 30}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.20", "부서": "시설관리팀", "직책": "안전관리자", "이름": "안주호", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 31}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.20", "부서": "원무부", "직책": "파트원", "이름": "이지성", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 32}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.20", "부서": "인공신장실", "직책": "책임간호사", "이름": "김지안", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 33}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.20", "부서": "6병동", "직책": "간호사", "이름": "강보명", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 34}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.29", "부서": "진료협력팀", "직책": "팀장 대리", "이름": "이진근", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 35}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.29", "부서": "영상의학팀", "직책": "주임", "이름": "엄민효", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 36}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.29", "부서": "진단검사의학팀", "직책": "주임", "이름": "노가람", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 37}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.29", "부서": "응급실", "직책": "간호사", "이름": "제수진", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 38}, {"연도": "2023", "구분": "포상", "내용": "국내연수(재주)", "일시": "23.03.29", "부서": "원무부", "직책": "팀장", "이름": "이준희", "선정기준": "병원기안참고", "비고": "친절왕", "category": "기타포상", "연번": 39}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "약제팀", "직책": "주임", "이름": "김순지", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 40}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "영양팀", "직책": "조리장", "이름": "박명화", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 41}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "12병동", "직책": "수간호사", "이름": "전홍희", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 42}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "시설관리팀", "직책": "파트장", "이름": "허성욱", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 43}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "진료협력팀", "직책": "팀장", "이름": "박창순", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 44}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "건강증진센터", "직책": "파트장", "이름": "김지영", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 45}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.13", "부서": "영상의학팀", "직책": "주임", "이름": "이학경", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 46}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "중앙공급실", "직책": "간호사", "이름": "구태희", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 47}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "외래", "직책": "간호조무사", "이름": "권보경", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 48}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "13병동", "직책": "수간호사", "이름": "임미영", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 49}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "소화기내시경센터", "직책": "수간호사", "이름": "조영선", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 50}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "원무심사팀", "직책": "파트원", "이름": "안정애", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 51}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "전산운영팀", "직책": "팀장", "이름": "정성관", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 52}, {"연도": "2023", "구분": "포상", "내용": "유럽연수", "일시": "23.11.20", "부서": "원무심사팀", "직책": "파트장", "이름": "이윤선", "선정기준": "병원기안참고", "비고": "유럽연수(이탈리아)", "category": "유럽연수", "연번": 53}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "기획총무팀", "직책": "팀장", "이름": "송호원", "선정기준": "병원기안참고", "비고": "모범직원", "category": "일본연수", "연번": 54}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "기획총무팀", "직책": "파트원", "이름": "하수정", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 55}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "진료협력팀", "직책": "팀장 대리", "이름": "하장명", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 56}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "A7병동", "직책": "간호사", "이름": "오수지", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 57}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "중환자실", "직책": "간호사", "이름": "김선민", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 58}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "원무부", "직책": "파트원", "이름": "김은헤", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 59}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "외래", "직책": "간호조무사", "이름": "강한나", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 60}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "재활치료팀", "직책": "물리치료사", "이름": "최슬아", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 61}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "외래", "직책": "간호사", "이름": "장지원", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 62}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "10병동", "직책": "간호조무사", "이름": "송배원", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 63}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "재무팀", "직책": "파트장", "이름": "김현정", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 64}, {"연도": "2023", "구분": "포상", "내용": "일본연수", "일시": "23.11.20", "부서": "외래", "직책": "간호조무사", "이름": "김민재", "선정기준": "병원기안참고", "비고": "친절왕", "category": "일본연수", "연번": 65}, {"연도": "2023", "구분": "포상", "내용": "QI경진대회", "일시": "23.11.30", "부서": "약제팀", "직책": "팀장", "이름": "윤지영", "선정기준": "병원기안참고", "비고": "최우수상", "category": "기타포상", "연번": 66}, {"연도": "2023", "구분": "포상", "내용": "QI경진대회", "일시": "23.11.30", "부서": "A7병동", "직책": "간호사", "이름": "오수지", "선정기준": "병원기안참고", "비고": "우수상", "category": "기타포상", "연번": 67}, {"연도": "2023", "구분": "포상", "내용": "QI경진대회", "일시": "23.11.30", "부서": "중환자실", "직책": "간호사", "이름": "조현화", "선정기준": "병원기안참고", "비고": "장려상", "category": "기타포상", "연번": 68}, {"연도": "2023", "구분": "포상", "내용": "QI경진대회", "일시": "23.11.30", "부서": "진단검사의학팀", "직책": "임상병리사", "이름": "윤숙현", "선정기준": "병원기안참고", "비고": "장려상", "category": "기타포상", "연번": 69}, {"연도": "2022", "구분": "포상", "내용": "22.01 친절왕", "일시": "22.02", "부서": "외래", "직책": "간호조무사", "이름": "강한나", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 1}, {"연도": "2022", "구분": "포상", "내용": "22.02 친절왕", "일시": "22.03", "부서": "6병동", "직책": "간호사", "이름": "강보명", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 2}, {"연도": "2022", "구분": "포상", "내용": "22.03 친절왕", "일시": "22.04", "부서": "11병동", "직책": "간호사", "이름": "서슬기", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 3}, {"연도": "2022", "구분": "포상", "내용": "22.04 친절왕", "일시": "22.05", "부서": "원무부", "직책": "파트장", "이름": "이준희", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 4}, {"연도": "2022", "구분": "포상", "내용": "22.05 친절왕", "일시": "22.06", "부서": "기획총무팀", "직책": "파트원", "이름": "하수정", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 5}, {"연도": "2022", "구분": "포상", "내용": "22.06 친절왕", "일시": "22.07", "부서": "9병동", "직책": "간호사", "이름": "김동완", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 6}, {"연도": "2022", "구분": "포상", "내용": "22.07 친절왕", "일시": "22.08", "부서": "재활치료팀", "직책": "물리치료사", "이름": "최슬아", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 7}, {"연도": "2022", "구분": "포상", "내용": "22.08 친절왕", "일시": "22.09", "부서": "건강증진센터", "직책": "파트원", "이름": "하장명", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 8}, {"연도": "2022", "구분": "포상", "내용": "22.09 친절왕", "일시": "22.10", "부서": "외래", "직책": "간호조무사", "이름": "이선주", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 9}, {"연도": "2022", "구분": "포상", "내용": "22.10 친절왕", "일시": "22.11", "부서": "중환자실", "직책": "간호사", "이름": "이창규", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 10}, {"연도": "2022", "구분": "포상", "내용": "22.11 친절왕", "일시": "22.12", "부서": "A7병동", "직책": "간호사", "이름": "오수지", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 11}, {"연도": "2022", "구분": "포상", "내용": "22.12 친절왕", "일시": "23.01", "부서": "교육수련부", "직책": "인턴", "이름": "허준영", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 12}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "10병동", "직책": "간호사", "이름": "박현경", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 13}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "11병동", "직책": "책임간호사", "이름": "김소미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 14}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "7병동", "직책": "간호사", "이름": "강자영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 15}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "7병동", "직책": "간호사", "이름": "최보미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 16}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "9병동", "직책": "간호사", "이름": "한은선", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 17}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "A9병동", "직책": "수간호사", "이름": "최현주", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 18}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "소화기내시경센터", "직책": "책임간호사", "이름": "송혜정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 19}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "소화기내시경센터", "직책": "간호사", "이름": "윤수경", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 20}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "유방외과외래", "직책": "책임간호사", "이름": "최보금", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 21}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "유방외과외래", "직책": "책임간호사", "이름": "정혜지", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 22}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "응급실", "직책": "간호사", "이름": "박미영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 23}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "응급실", "직책": "책임간호사", "이름": "안선애", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 24}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "정형외과외래", "직책": "책임간호사", "이름": "전유정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 25}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "순환기내과", "직책": "과장", "이름": "이태근", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 26}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "신장내과", "직책": "과장", "이름": "김보라", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 27}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "병리팀", "직책": "주임", "이름": "김민진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 28}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "영양팀", "직책": "팀장", "이름": "조미선", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 29}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "정아란", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 30}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "구매관리팀", "직책": "파트장", "이름": "문성준", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 31}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "약제팀", "직책": "파트원", "이름": "이정수", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 32}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "원무부", "직책": "파트원", "이름": "김은헤", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 33}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "재무팀", "직책": "파트장", "이름": "조민제", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 34}, {"연도": "2022", "구분": "포상", "내용": "10년 근속상", "일시": "22.04.16", "부서": "재무팀", "직책": "파트장", "이름": "김현정", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 35}, {"연도": "2022", "구분": "포상", "내용": "20년 근속상", "일시": "22.04.16", "부서": "진단검사의학팀", "직책": "팀장", "이름": "이상미", "선정기준": "", "비고": "", "category": "20년근속", "연번": 36}, {"연도": "2022", "구분": "포상", "내용": "20년 근속상", "일시": "22.04.16", "부서": "의료정보팀", "직책": "주임", "이름": "정경선", "선정기준": "", "비고": "", "category": "20년근속", "연번": 37}, {"연도": "2022", "구분": "포상", "내용": "개원기념 모범직원", "일시": "22.04.16", "부서": "기획총무팀", "직책": "팀장", "이름": "송호원", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 38}, {"연도": "2022", "구분": "포상", "내용": "개원기념 모범직원", "일시": "22.04.16", "부서": "원무부", "직책": "팀장", "이름": "채종성", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 39}, {"연도": "2022", "구분": "포상", "내용": "개원기념 모범직원", "일시": "22.04.16", "부서": "A9병동", "직책": "수간호사", "이름": "최현주", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 40}, {"연도": "2022", "구분": "포상", "내용": "개원기념 모범직원", "일시": "22.04.16", "부서": "중환자실", "직책": "책임간호사", "이름": "김선민", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 41}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "A9병동", "직책": "수간호사", "이름": "최현주", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 42}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "7병동", "직책": "수간호사", "이름": "김제연", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 43}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "시설관리팀", "직책": "파트장", "이름": "곽종민", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 44}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "재활치료팀", "직책": "팀장", "이름": "이승훈", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 45}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "11병동", "직책": "수간호사", "이름": "박지민", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 46}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "원무부", "직책": "파트장", "이름": "김나미", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 47}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.18", "부서": "인공신장실", "직책": "간호팀장", "이름": "반혜정", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 48}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "간호부", "직책": "수간호사", "이름": "고경아", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 49}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "QPS실", "직책": "팀장", "이름": "강선영", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 50}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "감염관리실", "직책": "팀장", "이름": "서우희", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 51}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "원무부", "직책": "팀장", "이름": "채종성", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 52}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "수술실", "직책": "간호과장", "이름": "김경미", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 53}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "구매관리팀", "직책": "파트장", "이름": "강기선", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 54}, {"연도": "2022", "구분": "포상", "내용": "유럽연수", "일시": "22.10.25", "부서": "의료정보팀", "직책": "주임", "이름": "정경선", "선정기준": "병원기안참고", "비고": "유럽연수(터키)", "category": "유럽연수", "연번": 55}, {"연도": "2021", "구분": "포상", "내용": "21.01 친절왕", "일시": "21.02.10", "부서": "간호부", "직책": "간호조무사", "이름": "김규연", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 1}, {"연도": "2021", "구분": "포상", "내용": "21.02 친절왕", "일시": "21.03.10", "부서": "진료협력팀", "직책": "계장", "이름": "이진근", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 2}, {"연도": "2021", "구분": "포상", "내용": "21.03 친절왕", "일시": "21.05.12", "부서": "영상의학팀", "직책": "주임 방사선사", "이름": "엄민효", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 3}, {"연도": "2021", "구분": "포상", "내용": "21.05 친절왕", "일시": "21.06.09", "부서": "외래", "직책": "간호조무사", "이름": "최송희", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 4}, {"연도": "2021", "구분": "포상", "내용": "21.06 친절왕", "일시": "21.07", "부서": "시설관리팀", "직책": "재난관리자", "이름": "안주호", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 5}, {"연도": "2021", "구분": "포상", "내용": "21.07 친절왕", "일시": "21.08", "부서": "교육수련부", "직책": "인턴", "이름": "최예인", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 6}, {"연도": "2021", "구분": "포상", "내용": "21.08 친절왕", "일시": "21.09", "부서": "진단검사의학팀", "직책": "임상병리사", "이름": "노가람", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 7}, {"연도": "2021", "구분": "포상", "내용": "21.09 친절왕", "일시": "21.10", "부서": "원무부", "직책": "파트원", "이름": "이지성", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 8}, {"연도": "2021", "구분": "포상", "내용": "21.10 친절왕", "일시": "21.11", "부서": "응급실", "직책": "간호사", "이름": "제수진", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 9}, {"연도": "2021", "구분": "포상", "내용": "21.11 친절왕", "일시": "21.12", "부서": "인공신장실", "직책": "간호사", "이름": "김지안", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 10}, {"연도": "2021", "구분": "포상", "내용": "21.12 친절왕", "일시": "22.01", "부서": "영상의학팀", "직책": "방사선사", "이름": "강미화", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 11}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "혈관외과", "직책": "진료과장", "이름": "주윤성", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 12}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "10병동", "직책": "간호사", "이름": "백송이", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 13}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "외래", "직책": "간호사", "이름": "최연주", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 14}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "외래", "직책": "간호사", "이름": "천우리", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 15}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "기획총무팀", "직책": "주임", "이름": "박가영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 16}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "원무부", "직책": "팀장", "이름": "송호원", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 17}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "국제협력팀", "직책": "주임", "이름": "전엘비라", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 18}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "원무팀", "직책": "파트장", "이름": "이영현", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 19}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "진단검사의학팀", "직책": "주임", "이름": "김미지", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 20}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "진단검사의학팀", "직책": "주임", "이름": "최민선", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 21}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "문성훈", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 22}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "송광후", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 23}, {"연도": "2021", "구분": "포상", "내용": "10년 근속상", "일시": "21.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "정현무", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 24}, {"연도": "2021", "구분": "포상", "내용": "20년 근속상", "일시": "", "부서": "병리과", "직책": "진료과장", "이름": "서지영", "선정기준": "", "비고": "", "category": "20년근속", "연번": 25}, {"연도": "2021", "구분": "포상", "내용": "20년 근속상", "일시": "", "부서": "간호부", "직책": "수간호사", "이름": "고경아", "선정기준": "", "비고": "", "category": "20년근속", "연번": 26}, {"연도": "2021", "구분": "포상", "내용": "개원기념 모범직원", "일시": "21.04.16", "부서": "기획총무팀", "직책": "팀장", "이름": "김광현", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 27}, {"연도": "2021", "구분": "포상", "내용": "개원기념 모범직원", "일시": "21.04.16", "부서": "원무부", "직책": "팀장", "이름": "최진기", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 28}, {"연도": "2021", "구분": "포상", "내용": "개원기념 모범직원", "일시": "21.04.16", "부서": "감염관리실", "직책": "팀장", "이름": "서우희", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 29}, {"연도": "2021", "구분": "포상", "내용": "개원기념 모범직원", "일시": "21.04.16", "부서": "A7병동", "직책": "수간호사", "이름": "최정영", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 30}, {"연도": "2020", "구분": "포상", "내용": "20.01 친절왕", "일시": "20.02.12", "부서": "원무팀", "직책": "사원", "이름": "윤혜원", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 1}, {"연도": "2020", "구분": "포상", "내용": "20.03 친절왕", "일시": "20.05.13", "부서": "감염관리실", "직책": "팀장", "이름": "김혜련", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 2}, {"연도": "2020", "구분": "포상", "내용": "20.05 친절왕", "일시": "20.06.10", "부서": "외래", "직책": "간호조무사", "이름": "김민정", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 3}, {"연도": "2020", "구분": "포상", "내용": "20.06 친절왕", "일시": "20.07.08", "부서": "6병동", "직책": "주임간호사", "이름": "최미정", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 4}, {"연도": "2020", "구분": "포상", "내용": "20.07 친절왕", "일시": "20.08.12", "부서": "외래", "직책": "간호조무사", "이름": "김효영", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 5}, {"연도": "2020", "구분": "포상", "내용": "20.08 친절왕", "일시": "20.09.09", "부서": "A7병동", "직책": "간호사", "이름": "구은정", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 6}, {"연도": "2020", "구분": "포상", "내용": "20.09 친절왕", "일시": "20.10.14", "부서": "외래", "직책": "간호조무사", "이름": "고슬기", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 7}, {"연도": "2020", "구분": "포상", "내용": "20.10 친절왕", "일시": "20.11.11", "부서": "7병동", "직책": "간호사", "이름": "최혜정", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 8}, {"연도": "2020", "구분": "포상", "내용": "20.11 친절왕", "일시": "20.12.09", "부서": "기획총무팀", "직책": "계장", "이름": "김균엽", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 9}, {"연도": "2020", "구분": "포상", "내용": "20.12 친절왕", "일시": "21.01.13", "부서": "약제팀", "직책": "주임", "이름": "정남경", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 10}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "소화기내과", "직책": "진료과장", "이름": "최세웅", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 11}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "진단검사의학과", "직책": "진료과장", "이름": "김경은", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 12}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "원무팀", "직책": "대리", "이름": "김정우", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 13}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "기획총무팀", "직책": "대리", "이름": "정민호", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 14}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "원무팀", "직책": "주임", "이름": "한아름", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 15}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "영양팀", "직책": "조리원", "이름": "강선미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 16}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "윤은미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 17}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "재활치료팀", "직책": "주임", "이름": "이승훈", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 18}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "중환자실", "직책": "주임간호사", "이름": "김수진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 19}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "8병동", "직책": "주임간호사", "이름": "이지현", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 20}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "외래", "직책": "간호사", "이름": "강미화", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 21}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "내시경실", "직책": "간호사", "이름": "최정인", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 22}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "6병동", "직책": "간호사", "이름": "이지수", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 23}, {"연도": "2020", "구분": "포상", "내용": "10년 근속상", "일시": "20.04.16", "부서": "외래", "직책": "간호조무사", "이름": "조여진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 24}, {"연도": "2020", "구분": "포상", "내용": "개원기념 모범직원", "일시": "20.04.16", "부서": "재활치료팀", "직책": "팀장", "이름": "이승훈", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 25}, {"연도": "2020", "구분": "포상", "내용": "개원기념 모범직원", "일시": "20.04.16", "부서": "13병동", "직책": "수간호사", "이름": "추수명", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 26}, {"연도": "2020", "구분": "포상", "내용": "개원기념 모범직원", "일시": "20.04.16", "부서": "중환자실", "직책": "수간호사", "이름": "송혜진", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 27}, {"연도": "2020", "구분": "포상", "내용": "개원기념 모범직원", "일시": "20.04.16", "부서": "내시경실", "직책": "수간호사", "이름": "조영선", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 28}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.05.29-05.31", "부서": "8병동", "직책": "수간호사", "이름": "공수영", "선정기준": "기타 적임자", "비고": "영상의학팀", "category": "일본연수", "연번": 1}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.05.29-05.31", "부서": "의료정보팀", "직책": "팀장", "이름": "신숙", "선정기준": "기타 적임자", "비고": "의료정보팀", "category": "일본연수", "연번": 2}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.05.29-05.31", "부서": "응급실", "직책": "간호사", "이름": "박미화", "선정기준": "18.11 친절왕", "비고": "", "category": "일본연수", "연번": 3}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.05.29-05.31", "부서": "7병동", "직책": "간호사", "이름": "이지영", "선정기준": "19.02 친절왕", "비고": "", "category": "일본연수", "연번": 4}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.05.29-05.31", "부서": "진료협력센터", "직책": "계장", "이름": "이진근", "선정기준": "19.01 친절왕", "비고": "", "category": "일본연수", "연번": 5}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.09.18-09.20", "부서": "원무팀", "직책": "대리", "이름": "김정우", "선정기준": "부서장 추천", "비고": "", "category": "일본연수", "연번": 6}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.09.18-09.20", "부서": "9병동", "직책": "간호사", "이름": "한은선", "선정기준": "간호사 추천", "비고": "", "category": "일본연수", "연번": 7}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.09.18-09.20", "부서": "재무팀", "직책": "주임", "이름": "김현정", "선정기준": "부서장 추천", "비고": "", "category": "일본연수", "연번": 8}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.09.18-09.20", "부서": "12병동", "직책": "간호사", "이름": "김지원", "선정기준": "간호사 추천", "비고": "", "category": "일본연수", "연번": 9}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.09.18-09.20", "부서": "7병동", "직책": "간호사", "이름": "강자영", "선정기준": "간호사 추천", "비고": "", "category": "일본연수", "연번": 10}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.10.16-10.18", "부서": "11병동", "직책": "간호사", "이름": "김보미", "선정기준": "19.03 친절왕", "비고": "", "category": "일본연수", "연번": 11}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.10.16-10.18", "부서": "시설관리팀", "직책": "주임", "이름": "곽종민", "선정기준": "19.08 친절왕", "비고": "", "category": "일본연수", "연번": 12}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.10.16-10.18", "부서": "영상의학과", "직책": "방사선사", "이름": "이미현", "선정기준": "19.06 친절왕", "비고": "", "category": "일본연수", "연번": 13}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.10.16-10.18", "부서": "외래(재활)", "직책": "간호조무사", "이름": "남윤아", "선정기준": "19.05 친절왕", "비고": "", "category": "일본연수", "연번": 14}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.12.11-12.13", "부서": "국제협력부", "직책": "팀장", "이름": "정호재", "선정기준": "팀장급 미참가자", "비고": "", "category": "일본연수", "연번": 15}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.12.11-12.13", "부서": "8병동", "직책": "간호사", "이름": "천우리", "선정기준": "19.07 친절왕", "비고": "", "category": "일본연수", "연번": 16}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.12.11-12.13", "부서": "진단검사의학팀", "직책": "임상병리사", "이름": "최한영", "선정기준": "19.09 친절왕", "비고": "", "category": "일본연수", "연번": 17}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.12.11-12.13", "부서": "응급실", "직책": "간호사", "이름": "박지혜", "선정기준": "19.10 친절왕", "비고": "", "category": "일본연수", "연번": 18}, {"연도": "2019", "구분": "포상", "내용": "일본해외연수", "일시": "2019.12.11-12.13", "부서": "12병동", "직책": "간호사", "이름": "김지현", "선정기준": "부서장추천", "비고": "", "category": "일본연수", "연번": 19}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 22-10.30", "부서": "재무팀", "직책": "팀장", "이름": "김종미", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 20}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 22-10.30", "부서": "재단사무국", "직책": "차 장", "이름": "전선경", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 21}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 22-10.30", "부서": "원무팀", "직책": "대 리", "이름": "김대욱", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 22}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 22-10.30", "부서": "재활치료팀", "직책": "주임", "이름": "신지숙", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 23}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 22-10.30", "부서": "수술실", "직책": "응급구조사", "이름": "김경도", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 24}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 30-11.7", "부서": "중환자실", "직책": "수간호사", "이름": "송혜진", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 25}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 30-11.7", "부서": "수술실", "직책": "책임간호사", "이름": "정혜영", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 26}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 30-11.7", "부서": "외래", "직책": "책임간호사", "이름": "김홍희", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 27}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 30-11.7", "부서": "11병동", "직책": "책임간호사", "이름": "김선민", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 28}, {"연도": "2019", "구분": "포상", "내용": "유럽해외연수", "일시": "2019. 10. 30-11.7", "부서": "응급실", "직책": "수간호사", "이름": "전희정", "선정기준": "우수직원", "비고": "", "category": "유럽연수", "연번": 29}, {"연도": "2019", "구분": "포상", "내용": "19.01 친절왕", "일시": "19.02", "부서": "진료협력센터", "직책": "계장", "이름": "이진근", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 30}, {"연도": "2019", "구분": "포상", "내용": "19.02 친절왕", "일시": "19.03.13", "부서": "7병동", "직책": "간호사", "이름": "이지영", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 31}, {"연도": "2019", "구분": "포상", "내용": "19.03 친절왕", "일시": "19.04", "부서": "11병동", "직책": "간호사", "이름": "김보미", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 32}, {"연도": "2019", "구분": "포상", "내용": "19.04 친절왕", "일시": "19.05.08", "부서": "외래", "직책": "치위생사", "이름": "김선영", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 33}, {"연도": "2019", "구분": "포상", "내용": "19.05 친절왕", "일시": "19.06.12", "부서": "외래(재활)", "직책": "간호조무사", "이름": "남윤아", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 34}, {"연도": "2019", "구분": "포상", "내용": "19.06 친절왕", "일시": "19.07.10", "부서": "영상의학과", "직책": "방사선사", "이름": "이미현", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 35}, {"연도": "2019", "구분": "포상", "내용": "19.07 친절왕", "일시": "19.08.14", "부서": "8병동", "직책": "간호사", "이름": "천우리", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 36}, {"연도": "2019", "구분": "포상", "내용": "19.08 친절왕", "일시": "19.09.11", "부서": "시설관리팀", "직책": "주임", "이름": "곽종민", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 37}, {"연도": "2019", "구분": "포상", "내용": "19.09 친절왕", "일시": "19.10.16", "부서": "진단검사의학팀", "직책": "임상병리사", "이름": "최한영", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 38}, {"연도": "2019", "구분": "포상", "내용": "19.10 친절왕", "일시": "19.11.13", "부서": "응급실", "직책": "간호사", "이름": "박지혜", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 39}, {"연도": "2019", "구분": "포상", "내용": "19.11 친절왕", "일시": "19.12.11", "부서": "건강증진센터", "직책": "사원", "이름": "예성민", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 40}, {"연도": "2019", "구분": "포상", "내용": "19.12 친절왕", "일시": "20.01.02", "부서": "중환자실", "직책": "간호사", "이름": "신화경", "선정기준": "친절위원회 선정", "비고": "일본연수기회제공", "category": "친절왕", "연번": 41}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "기획총무팀", "직책": "대리", "이름": "김민규", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 42}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "기획총무팀", "직책": "사원", "이름": "김용진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 43}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "원무팀", "직책": "대리", "이름": "이준희", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 44}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "원무팀", "직책": "계장", "이름": "지새미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 45}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "장례사업팀", "직책": "팀장", "이름": "강창오", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 46}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "영양팀", "직책": "조리원", "이름": "강연화", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 47}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "7병동", "직책": "책임간호사", "이름": "심정연", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 48}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "주사실", "직책": "간호사", "이름": "백은솔", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 49}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "10병동", "직책": "간호사", "이름": "김보미", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 50}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "외래", "직책": "간호조무사", "이름": "조여진", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 51}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "외래", "직책": "간호사", "이름": "최혜영", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 52}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "진단검사의학팀", "직책": "주임", "이름": "박은아", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 53}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "진단검사의학팀", "직책": "주임", "이름": "김혜원", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 54}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "영상의학팀", "직책": "주임", "이름": "권현준", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 55}, {"연도": "2019", "구분": "포상", "내용": "10년 근속상", "일시": "19.04.16", "부서": "재활치료팀", "직책": "팀장", "이름": "이동률", "선정기준": "병원기안참고", "비고": "순금5돈", "category": "10년근속", "연번": 56}, {"연도": "2019", "구분": "포상", "내용": "모범직원상", "일시": "19.04.16", "부서": "재활치료팀", "직책": "팀장", "이름": "이동률", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 57}, {"연도": "2019", "구분": "포상", "내용": "모범직원상", "일시": "19.04.16", "부서": "10병동", "직책": "책임간호사", "이름": "전홍희", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 58}, {"연도": "2019", "구분": "포상", "내용": "모범직원상", "일시": "19.04.16", "부서": "외래", "직책": "책임간호사", "이름": "정지영", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 59}, {"연도": "2019", "구분": "포상", "내용": "모범직원상", "일시": "19.04.16", "부서": "기획총무팀", "직책": "계장", "이름": "정민호", "선정기준": "병원기안참고", "비고": "", "category": "모범직원", "연번": 60}, {"연도": "2019", "구분": "징계", "내용": "인사위원회", "일시": "19.04", "부서": "교육수련부", "직책": "레지던트", "이름": "이철진", "선정기준": "견책", "비고": "", "category": "징계", "연번": 61}, {"연도": "2019", "구분": "징계", "내용": "인사위원회", "일시": "19.08", "부서": "수술실", "직책": "간호조무사", "이름": "김경도", "선정기준": "감봉2개월\n(2019.08~09)", "비고": "", "category": "징계", "연번": 62}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.10.24~31", "부서": "7병동", "직책": "책임간호사", "이름": "최미정", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 1}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.10.24~31", "부서": "기획총무팀", "직책": "과장", "이름": "정승혁", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 2}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.10.24~31", "부서": "기획총무팀", "직책": "과장", "이름": "권정운", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 3}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.10.24~31", "부서": "의료정보팀", "직책": "팀장", "이름": "신숙", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 4}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.10.24~31", "부서": "8병동", "직책": "수간호사", "이름": "공수영", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 5}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.11.01~07", "부서": "전산운영팀", "직책": "과장", "이름": "이동원", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 6}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.11.01~07", "부서": "7병동", "직책": "책임간호사", "이름": "심정연", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 7}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.11.01~07", "부서": "NST", "직책": "책임간호사", "이름": "이선화", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 8}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.11.01~07", "부서": "척추센터", "직책": "간호사", "이름": "안정현", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 9}, {"연도": "2018", "구분": "포상", "내용": "유럽연수", "일시": "2018.11.01~07", "부서": "구매관리팀", "직책": "대리", "이름": "문성준", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 10}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.01~08", "부서": "기획총무팀", "직책": "과장", "이름": "박성미", "선정기준": "", "비고": "당시 삼선 근무", "category": "유럽연수", "연번": 1}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.01~08", "부서": "응급실", "직책": "간호팀장", "이름": "김은주", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 2}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.01~08", "부서": "7병동", "직책": "수간호사", "이름": "김혜경", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 3}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.01~08", "부서": "구매관리팀", "직책": "팀장", "이름": "서정규", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 4}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.01~08", "부서": "재활치료팀", "직책": "사원", "이름": "윤은미", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 5}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.01~08", "부서": "기획총무팀", "직책": "계장", "이름": "정민호", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 6}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.08~15", "부서": "행정부", "직책": "사무국장", "이름": "문나겸", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 7}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.08~15", "부서": "영상의학팀", "직책": "주임", "이름": "김타현", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 8}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.08~15", "부서": "시설관리팀", "직책": "팀장", "이름": "이주호", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 9}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.08~15", "부서": "12병동", "직책": "수간호사", "이름": "엄영미", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 10}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.08~15", "부서": "중환자실", "직책": "수간호사", "이름": "조소영", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 11}, {"연도": "2017", "구분": "포상", "내용": "유럽연수", "일시": "2017.11.08~15", "부서": "10병동", "직책": "책임간호사", "이름": "강경진", "선정기준": "", "비고": "", "category": "유럽연수", "연번": 12}];
+const INDIVIDUALS = [{"연번": "1", "이름": "심수정", "부서": "가정의학과", "직위": "진료과장", "상벌내용": "10년 근속(2016)", "퇴사여부": "2021.02.28"}, {"연번": "2", "이름": "박다정", "부서": "가정의학과", "직위": "진료과장", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "3", "이름": "최예인", "부서": "교육수련부", "직위": "인턴", "상벌내용": "21.07 친절왕", "퇴사여부": "2022.02.28"}, {"연번": "4", "이름": "허준영", "부서": "교육수련부", "직위": "인턴", "상벌내용": "22.12 친절왕", "퇴사여부": "2023.02.28"}, {"연번": "5", "이름": "이현섭", "부서": "마취통증의학과", "직위": "진료과장", "상벌내용": "10년 근속(2015) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "6", "이름": "박영서", "부서": "마취통증의학과", "직위": "진료과장", "상벌내용": "10년 근속(2017)", "퇴사여부": ""}, {"연번": "7", "이름": "서지영", "부서": "병리과", "직위": "진료과장", "상벌내용": "10년 근속(2012) / 20년 근속(2021)", "퇴사여부": "2021.12.31"}, {"연번": "8", "이름": "서정빈", "부서": "비뇨의학과", "직위": "진료과장", "상벌내용": "20년 근속(2024) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "9", "이름": "이영아", "부서": "소아청소년과", "직위": "진료과장", "상벌내용": "10년 근속(2015) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "10", "이름": "박지애", "부서": "소아청소년과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "11", "이름": "이동현", "부서": "소화기내과", "직위": "진료과장", "상벌내용": "10년 근속(2015) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "12", "이름": "최세웅", "부서": "소화기내과", "직위": "진료과장", "상벌내용": "10년 근속(2020)", "퇴사여부": ""}, {"연번": "13", "이름": "임영배", "부서": "소화기내과", "직위": "진료과장", "상벌내용": "10년 근속(2023)", "퇴사여부": "재단 내 재직기간 합산"}, {"연번": "14", "이름": "오숙경", "부서": "소화기내과", "직위": "진료과장", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "15", "이름": "고민석", "부서": "소화기내과", "직위": "진료과장", "상벌내용": "10년 근속(2026)", "퇴사여부": "수련기간 포함"}, {"연번": "16", "이름": "이태근", "부서": "순환기내과", "직위": "진료과장", "상벌내용": "10년 근속(2022)", "퇴사여부": "퇴사후 재입사. 재직기간합산"}, {"연번": "17", "이름": "이준상", "부서": "순환기내과", "직위": "진료과장", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "18", "이름": "이주호", "부서": "신경과", "직위": "진료과장", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "19", "이름": "전상호", "부서": "신경외과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "20", "이름": "김지환", "부서": "신장내과", "직위": "진료과장", "상벌내용": "10년 근속(2018)", "퇴사여부": "2020.02.29"}, {"연번": "21", "이름": "김보라", "부서": "신장내과", "직위": "진료과장", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "22", "이름": "남희", "부서": "안과", "직위": "진료과장", "상벌내용": "10년 근속(2016)", "퇴사여부": ""}, {"연번": "23", "이름": "이승룡", "부서": "영상의학과", "직위": "진료과장", "상벌내용": "10년 근속(2015) / 20년 근속(2025) / 유럽연수(2025)", "퇴사여부": "유럽연수 발권 후 포기"}, {"연번": "24", "이름": "정경화", "부서": "영상의학과", "직위": "진료과장", "상벌내용": "10년 근속(2017)", "퇴사여부": ""}, {"연번": "25", "이름": "이경희A", "부서": "영상의학과", "직위": "진료과장", "상벌내용": "10년 근속(2018)", "퇴사여부": "2022.02.28"}, {"연번": "26", "이름": "이상희", "부서": "영상의학과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "27", "이름": "남동국", "부서": "외과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": "2024.02.29 / 퇴사 전 수령"}, {"연번": "28", "이름": "이상진", "부서": "재활의학과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "29", "이름": "이동기", "부서": "정신건강의학과", "직위": "진료과장", "상벌내용": "10년 근속(2016) / 20년 근속(2026)", "퇴사여부": ""}, {"연번": "30", "이름": "허현", "부서": "정형외과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "31", "이름": "서우영", "부서": "진단검사의학과", "직위": "진료과장", "상벌내용": "10년 근속(2017) / 20년 근속(2026)", "퇴사여부": ""}, {"연번": "32", "이름": "김경은", "부서": "진단검사의학과", "직위": "진료과장", "상벌내용": "10년 근속(2020)", "퇴사여부": ""}, {"연번": "33", "이름": "주윤성", "부서": "혈관외과", "직위": "진료과장", "상벌내용": "10년 근속(2021)", "퇴사여부": ""}, {"연번": "34", "이름": "서현택", "부서": "호흡기내과", "직위": "진료과장", "상벌내용": "10년 근속(2024)", "퇴사여부": "전공의 재직기간 합산"}, {"연번": "35", "이름": "권영민", "부서": "흉부외과", "직위": "진료과장", "상벌내용": "10년 근속(2023)", "퇴사여부": ""}, {"연번": "1", "이름": "최영우", "부서": "행정부", "직위": "상임고문", "상벌내용": "20년 근속(2009)", "퇴사여부": "2021.04.30"}, {"연번": "2", "이름": "문나겸", "부서": "행정부", "직위": "경영부원장", "상벌내용": "일본(2006) / 태국(2015) / 20년 근속(2015) / 유럽연수(2017) / 30년 근속(2025)", "퇴사여부": ""}, {"연번": "3", "이름": "김용정", "부서": "행정부", "직위": "사무국장", "상벌내용": "해외연수(2006) / 2009모범직원(2009) / 20년 근속(2016) / 30년 근속(2026)", "퇴사여부": ""}, {"연번": "4", "이름": "송호원", "부서": "기획총무팀", "직위": "팀장", "상벌내용": "2015하반기우수직원-태국(2016) / 10년 근속(2021) / 모범직원(2022)  / 일본연수(2023)", "퇴사여부": "2024.02.29"}, {"연번": "5", "이름": "정영부", "부서": "인사총무팀", "직위": "팀장", "상벌내용": "일본연수(2024)", "퇴사여부": ""}, {"연번": "6", "이름": "박성미", "부서": "인사총무팀", "직위": "파트장", "상벌내용": "2006 모범직원(삼선) / 10년 근속(2008, 삼선) / 2009 상반기 우수직원 - 태국연수(삼선)\n20년 근속 - 유럽연수(2017, 삼선)  / 모범직원(2023. 강안)", "퇴사여부": ""}, {"연번": "7", "이름": "정민호", "부서": "기획홍보팀", "직위": "팀장", "상벌내용": "2012하반기우수직원-일본(2013) / 유럽(2017) / 2019모범직원(2019)  / 10년 근속(2020)", "퇴사여부": ""}, {"연번": "8", "이름": "김균엽", "부서": "인사총무팀", "직위": "파트장", "상벌내용": "20.11 친절왕", "퇴사여부": ""}, {"연번": "9", "이름": "박가영", "부서": "인사총무팀", "직위": "주임", "상벌내용": "10년 근속(2021)", "퇴사여부": ""}, {"연번": "10", "이름": "하수정", "부서": "기획홍보팀", "직위": "주임", "상벌내용": "22.05 친절왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "11", "이름": "김광현", "부서": "기획총무팀", "직위": "팀장", "상벌내용": "모범직원(2021)", "퇴사여부": "2021.08.15"}, {"연번": "12", "이름": "김민규", "부서": "기획총무팀", "직위": "대리", "상벌내용": "10년 근속(2019)", "퇴사여부": "2019.07.13"}, {"연번": "13", "이름": "정승혁", "부서": "기획총무팀", "직위": "과장", "상벌내용": "10년 근속(2008) / 20년 근속-유럽연수(2018)", "퇴사여부": "2020.04.30"}, {"연번": "14", "이름": "김용진", "부서": "기획총무팀", "직위": "사원", "상벌내용": "10년 근속(2019)", "퇴사여부": "2021.11.14"}, {"연번": "15", "이름": "최하늘", "부서": "인사총무팀", "직위": "파트원", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "16", "이름": "최진기", "부서": "건강증진센터", "직위": "팀장", "상벌내용": "일본(2018) / 모범직원(2021)", "퇴사여부": "2024.03.31"}, {"연번": "17", "이름": "박창형", "부서": "건강증진센터", "직위": "팀장", "상벌내용": "23.07 친절왕 / 일본연수(2024) /모범직원(2026)", "퇴사여부": ""}, {"연번": "18", "이름": "김지영D", "부서": "건강증진센터", "직위": "파트장", "상벌내용": "2015상반기우수직원-일본(2015) / 10년 근속(2018)  / 모범직원(2023) / 유럽연수(2023)", "퇴사여부": ""}, {"연번": "19", "이름": "예성민", "부서": "건강증진센터", "직위": "파트원", "상벌내용": "19.11 친절왕", "퇴사여부": ""}, {"연번": "20", "이름": "백호종", "부서": "건강증진센터", "직위": "대리", "상벌내용": "2015상반기우수직원-일본(2015) / 10년 근속(2018)", "퇴사여부": "2021.07.31"}, {"연번": "21", "이름": "우현주", "부서": "건강증진센터", "직위": "사원", "상벌내용": "18.07 친절왕-일본(2018)", "퇴사여부": "2020.01.31"}, {"연번": "22", "이름": "서정규", "부서": "구매관리팀", "직위": "팀장", "상벌내용": "10년 근속(2011) / 모범직원(2012) / 유럽연수(2017)", "퇴사여부": ""}, {"연번": "23", "이름": "문성준", "부서": "구매관리팀", "직위": "파트장", "상벌내용": "2013상반기우수직원-일본(2013) / 유럽(2018) / 10년 근속(2022)", "퇴사여부": ""}, {"연번": "24", "이름": "강기선", "부서": "구매관리팀", "직위": "파트장", "상벌내용": "2008상반기우수직원-중국(2008) /  유럽연수(2022) / 20년 근속(2023)", "퇴사여부": ""}, {"연번": "25", "이름": "윤혜경", "부서": "발달의학센터", "직위": "부소장", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "26", "이름": "서영애", "부서": "병리팀", "직위": "팀장", "상벌내용": "20년 근속(2015)", "퇴사여부": "2022.01.31"}, {"연번": "27", "이름": "김민진", "부서": "병리팀", "직위": "주임", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "28", "이름": "김현", "부서": "병리팀", "직위": "임상병리사", "상벌내용": "23.11 청결왕 / 일본연수(2024)", "퇴사여부": ""}, {"연번": "29", "이름": "이주호B", "부서": "시설관리팀", "직위": "팀장", "상벌내용": "2007하반기우수직원-일본(2008) / 10년 근속(2015) / 유럽연수(2017) \n2018모범직원-일본(2018) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "30", "이름": "허성욱", "부서": "시설관리팀", "직위": "파트장", "상벌내용": "2012하반기우수직원-일본(2013) / 10년 근속(2015) / 유럽연수(2023) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "31", "이름": "김정훈B", "부서": "시설관리팀", "직위": "주임", "상벌내용": "2014하반기우수직원-태국(2015) / 10년 근속(2023)", "퇴사여부": ""}, {"연번": "32", "이름": "곽종민", "부서": "시설관리팀", "직위": "파트장", "상벌내용": "19.08 친절왕 - 일본연수(2019) / 유럽연수(2022)", "퇴사여부": ""}, {"연번": "33", "이름": "이준영", "부서": "시설관리팀", "직위": "시설기사", "상벌내용": "2015하반기우수직원-태국(2016) / 10년 근속(2023) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "34", "이름": "안주호", "부서": "시설관리팀", "직위": "재난관리자", "상벌내용": "21.06 친절왕 / 제주연수(2023)", "퇴사여부": ""}, {"연번": "35", "이름": "장홍식", "부서": "시설관리팀", "직위": "시설기사", "상벌내용": "25.06 절약왕", "퇴사여부": ""}, {"연번": "36", "이름": "박덕희", "부서": "시설관리팀", "직위": "시설기사", "상벌내용": "10년 근속(2026)", "퇴사여부": "촉탁전환기간 포함"}, {"연번": "37", "이름": "윤지영", "부서": "약제팀", "직위": "팀장", "상벌내용": "QI경진대회 최우수상(2023)", "퇴사여부": ""}, {"연번": "38", "이름": "김순지", "부서": "약제팀", "직위": "주임", "상벌내용": "2010하반기우수직원-태국(2011) / 20년 근속(2023) / 유럽연수(2023)", "퇴사여부": ""}, {"연번": "39", "이름": "박혜경", "부서": "약제팀", "직위": "주임", "상벌내용": "2008하반기우수직원-태국(2009) / 3개위원회-중국(2010) / 10년 근속(2015)\n유럽연수(2024) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "40", "이름": "이정수", "부서": "약제팀", "직위": "주임", "상벌내용": "2014하반기우수직원-태국(2015) / 10년 근속(2022) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "41", "이름": "정남경", "부서": "약제팀", "직위": "사원", "상벌내용": "20.12 친절왕 / 10년 근속(2023) / 제주연수(2023)", "퇴사여부": "2024.02.29"}, {"연번": "42", "이름": "정혜영B", "부서": "약제팀", "직위": "팀장", "상벌내용": "모범직원(2016)", "퇴사여부": "2021.04.30"}, {"연번": "43", "이름": "주다솜", "부서": "약제팀", "직위": "사원", "상벌내용": "유럽연수(2025)", "퇴사여부": ""}, {"연번": "44", "이름": "김타현", "부서": "영상의학팀", "직위": "팀장", "상벌내용": "10년 근속(2007) / 2008상반기우수직원-중국(2008) / 모범직원(2011)\n 20년 근속-유럽(2017) / 2018모범직원(2018)-일본(2018) / 30년 근속(2026)", "퇴사여부": ""}, {"연번": "45", "이름": "주성도", "부서": "영상의학팀", "직위": "주임", "상벌내용": "2009상반기우수직원-태국(2009) / 10년 근속(2015) / 18.09 친절왕-일본(2019)\n유럽연수(2024, 부친상으로포기함) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "46", "이름": "이학경", "부서": "영상의학팀", "직위": "주임", "상벌내용": "2010하반기우수직원-태국(2011) / 20년 근속(2023) / 유럽연수(2023)", "퇴사여부": ""}, {"연번": "47", "이름": "현상원", "부서": "영상의학팀", "직위": "주임", "상벌내용": "10년 근속(2018) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "48", "이름": "이원재", "부서": "영상의학팀", "직위": "주임", "상벌내용": "10년 근속(2018) / 17.11 친절왕 - 일본(2018)", "퇴사여부": ""}, {"연번": "49", "이름": "권현준", "부서": "영상의학팀", "직위": "주임", "상벌내용": "10년 근속(2019)", "퇴사여부": ""}, {"연번": "50", "이름": "송광후", "부서": "영상의학팀", "직위": "주임", "상벌내용": "10년 근속(2021)", "퇴사여부": ""}, {"연번": "51", "이름": "정현무", "부서": "영상의학팀", "직위": "주임", "상벌내용": "10년 근속(2021)", "퇴사여부": ""}, {"연번": "52", "이름": "문성훈", "부서": "영상의학팀", "직위": "주임", "상벌내용": "10년 근속(2021)", "퇴사여부": "2022.08.31"}, {"연번": "53", "이름": "이미현", "부서": "영상의학팀", "직위": "방사선사", "상벌내용": "19.06 친절왕 - 일본(2019) /  10년 근속(2023)", "퇴사여부": "2024.03.23"}, {"연번": "54", "이름": "엄민효", "부서": "영상의학팀", "직위": "방사선사", "상벌내용": "21.03 친절왕 / 제주연수(2023)", "퇴사여부": ""}, {"연번": "55", "이름": "강미화", "부서": "영상의학팀", "직위": "방사선사", "상벌내용": "21.12 친절왕", "퇴사여부": ""}, {"연번": "56", "이름": "최유림", "부서": "영상의학팀", "직위": "방사선사", "상벌내용": "25.04 절약왕", "퇴사여부": "2025.05.31"}, {"연번": "57", "이름": "조미선", "부서": "영양팀", "직위": "팀장", "상벌내용": "10년 근속(2022) / 모범직원(2024) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "58", "이름": "정연우", "부서": "영양팀", "직위": "영양사", "상벌내용": "QI경연대회 최우수상(2025)", "퇴사여부": ""}, {"연번": "59", "이름": "박명화", "부서": "영양팀", "직위": "조리사", "상벌내용": "2011상반기우수직원-중국(2011) / 유럽연수(2023)", "퇴사여부": ""}, {"연번": "60", "이름": "강연화", "부서": "영양팀", "직위": "조리원", "상벌내용": "2013하반기우수직원-일본(2014) / 10년 근속(2019)", "퇴사여부": ""}, {"연번": "61", "이름": "김혜정", "부서": "영양팀", "직위": "조리사", "상벌내용": "2011하반기우수직원-태국(2012)", "퇴사여부": "2019.09.30"}, {"연번": "62", "이름": "강선미", "부서": "영양팀", "직위": "조리사", "상벌내용": "2015상반기우수직원-일본(2015) / 10년 근속(2020)", "퇴사여부": "2023.04.30"}, {"연번": "63", "이름": "이정애", "부서": "영양팀", "직위": "조리원", "상벌내용": "2012하반기우수직원-일본(2013)", "퇴사여부": "2022.06.30"}, {"연번": "64", "이름": "이분순", "부서": "영양팀", "직위": "조리사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "65", "이름": "김나미", "부서": "원무부", "직위": "팀장", "상벌내용": "2008하반기우수직원-태국(2009) / 10년 근속(2015) / 유럽연수(2022)\n20년 근속(2025) / 모범직원(2025)", "퇴사여부": ""}, {"연번": "66", "이름": "김대욱", "부서": "원무부", "직위": "팀장", "상벌내용": "2010상반기우수직원-일본(2011) / 우수직원 - 유럽(2019)  / 2023 모범직원  / 일본연수(2024)", "퇴사여부": ""}, {"연번": "67", "이름": "이준희", "부서": "원무부", "직위": "팀장", "상벌내용": "2016상반기우수직원-태국(2016) / 10년 근속(2019) / 22.04 친절왕 / 제주연수(2023)\n모범직원(2024) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "68", "이름": "채종성", "부서": "원무부", "직위": "팀장", "상벌내용": "10년 근속(2016) / 모범직원(2022) / 유럽연수(2022)", "퇴사여부": "2023.02.28 / 재입사(26.03.01)"}, {"연번": "69", "이름": "김정우", "부서": "원무부", "직위": "파트장", "상벌내용": "2011하반기우수직원-태국(2012) / 일본연수(2019) / 10년 근속(2020)", "퇴사여부": ""}, {"연번": "70", "이름": "박순영", "부서": "원무부", "직위": "파트장", "상벌내용": "18.05 친절왕-일본(2018) / 10년 근속(2025)", "퇴사여부": ""}, {"연번": "71", "이름": "지새미", "부서": "원무부", "직위": "파트원", "상벌내용": "10년 근속(2019)", "퇴사여부": ""}, {"연번": "72", "이름": "한아름A", "부서": "원무부", "직위": "파트장", "상벌내용": "2013상반기우수직원-일본(2013)  / 10년 근속(2020)", "퇴사여부": ""}, {"연번": "73", "이름": "김경환", "부서": "원무부", "직위": "파트원", "상벌내용": "17.12 친절왕-일본(2018) / 10년 근속(2026)", "퇴사여부": ""}, {"연번": "74", "이름": "윤혜원", "부서": "원무부", "직위": "파트원", "상벌내용": "20.01 친절왕 / 25.06 청결왕", "퇴사여부": ""}, {"연번": "75", "이름": "이영현", "부서": "원무부", "직위": "파트원", "상벌내용": "10년 근속(2021)", "퇴사여부": "2024.09.13"}, {"연번": "76", "이름": "김은헤", "부서": "원무부", "직위": "파트원", "상벌내용": "10년 근속(2022) / 23.01 친절왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "77", "이름": "이지성", "부서": "원무부", "직위": "파트원", "상벌내용": "21.09 친절왕 / 제주연수(2023)", "퇴사여부": ""}, {"연번": "78", "이름": "여혜진", "부서": "원무부", "직위": "파트원", "상벌내용": "10년 근속(2023) / 24.07 친절왕 / 일본연수(2024)", "퇴사여부": ""}, {"연번": "79", "이름": "채진주", "부서": "원무부", "직위": "파트원", "상벌내용": "24.02 청결왕", "퇴사여부": ""}, {"연번": "80", "이름": "이상빈", "부서": "원무부", "직위": "파트원", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "81", "이름": "서미지", "부서": "원무부", "직위": "파트원", "상벌내용": "26.01 절약왕", "퇴사여부": ""}, {"연번": "82", "이름": "정현주", "부서": "원무팀(심사)", "직위": "부장", "상벌내용": "모범직원(2015) / 20년 근속(2015) / 30년 근속(2025) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "83", "이름": "구영화", "부서": "원무팀(심사)", "직위": "파트장", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "84", "이름": "안정애", "부서": "원무팀(심사)", "직위": "파트장", "상벌내용": "2009하반기우수직원-태국(2010) / 10년 근속(2015) / 유럽연수(2023) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "85", "이름": "이윤선", "부서": "원무팀(심사)", "직위": "파트장", "상벌내용": "2009하반기우수직원-태국(2010) / 10년 근속(2017) / 유럽연수(2023)", "퇴사여부": ""}, {"연번": "86", "이름": "김규리", "부서": "원무팀(심사)", "직위": "파트원", "상벌내용": "10년 근속(2023)", "퇴사여부": ""}, {"연번": "87", "이름": "윤지은", "부서": "원무팀(심사)", "직위": "파트원", "상벌내용": "2011상반기우수직원-중국(2011) / 10년 근속(2018)", "퇴사여부": "2020.07.31"}, {"연번": "88", "이름": "최은영A", "부서": "원무팀(심사)", "직위": "파트원", "상벌내용": "10년 근속(2017)", "퇴사여부": ""}, {"연번": "89", "이름": "신숙", "부서": "의료정보팀", "직위": "팀장", "상벌내용": "2014상반기우수직원-태국(2014) / 모범직원(2016) / 유럽(2018) / 일본연수(2019)", "퇴사여부": ""}, {"연번": "90", "이름": "정경선", "부서": "의료정보팀", "직위": "주임", "상벌내용": "2007상반기우수직원-일본(2007) / 10년 근속(2012) / 20년 근속(2022) / 유럽연수(2022)", "퇴사여부": "2022.11.30"}, {"연번": "91", "이름": "최수미", "부서": "의료정보팀", "직위": "의료정보관리사", "상벌내용": "18.10 친절왕-일본(2019)", "퇴사여부": "2022.08.31 / 재입사"}, {"연번": "92", "이름": "조혜림", "부서": "의료정보팀", "직위": "의료정보관리사", "상벌내용": "QI경연대회 우수상(2025) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "93", "이름": "이승훈", "부서": "재활치료팀", "직위": "팀장", "상벌내용": "2015하반기우수직원-태국(2016) / 10년 근속(2020) / 모범직원(2020) / 유럽연수(2022)", "퇴사여부": ""}, {"연번": "94", "이름": "신지숙", "부서": "재활치료팀", "직위": "주임", "상벌내용": "2007하반기우수직원-일본(2008) / 유럽연수(2019) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "95", "이름": "박진영", "부서": "재활치료팀", "직위": "주임", "상벌내용": "2010하반기우수직원-태국(2011)", "퇴사여부": "2024.06.30"}, {"연번": "96", "이름": "이종수B", "부서": "재활치료팀", "직위": "주임", "상벌내용": "2012상반기우수직원-태국(2012) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "97", "이름": "윤은미", "부서": "재활치료팀", "직위": "주임", "상벌내용": "2013하반기우수직원-일본(2014) / 유럽(2017) / 10년 근속(2020)", "퇴사여부": ""}, {"연번": "98", "이름": "정아란", "부서": "재활치료팀", "직위": "주임", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "99", "이름": "김지우", "부서": "재활치료팀", "직위": "주임", "상벌내용": "10년 근속(2023)", "퇴사여부": ""}, {"연번": "100", "이름": "안지혜", "부서": "재활치료팀", "직위": "주임", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "101", "이름": "정다해", "부서": "재활치료팀", "직위": "주임", "상벌내용": "10년 근속(2025)", "퇴사여부": "2025.09.30"}, {"연번": "102", "이름": "김승혜", "부서": "재활치료팀", "직위": "주임", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "103", "이름": "김가영A", "부서": "재활치료팀", "직위": "물리치료사", "상벌내용": "23.12 절약왕  / 일본연수(2024)", "퇴사여부": "2025.12.31"}, {"연번": "104", "이름": "손영환", "부서": "재활치료팀", "직위": "물리치료사", "상벌내용": "24.04 친절왕  / 일본연수(2024)", "퇴사여부": ""}, {"연번": "105", "이름": "최슬아", "부서": "재활치료팀", "직위": "물리치료사", "상벌내용": "22.07 친절왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "106", "이름": "이동률", "부서": "재활치료팀", "직위": "팀장", "상벌내용": "10년 근속(2019) / 2019모범직원(2019)", "퇴사여부": "2021.02.14"}, {"연번": "107", "이름": "황종식", "부서": "재단사무국", "직위": "본부장", "상벌내용": "2010모범직원(2010) / 20년 근속(2015) / 유럽연수(2018)", "퇴사여부": "2020.03.31"}, {"연번": "108", "이름": "전선경", "부서": "재단사무국", "직위": "팀장", "상벌내용": "일본(2005) / 2006모범직원(2006) / 10년 근속(2015) / 유럽연수(2019)", "퇴사여부": "2020.05.31"}, {"연번": "109", "이름": "김종미", "부서": "재무팀", "직위": "팀장", "상벌내용": "3개위원회-중국(2010) / 2006하반기우수직원-일본(2007) / 모범직원(2013) \n10년 근속(2015) / 유럽연수(2019) / 근속 20년(2025)", "퇴사여부": ""}, {"연번": "110", "이름": "조민제", "부서": "재무팀", "직위": "파트장", "상벌내용": "2013상반기우수직원-일본(2013) / 10년 근속(2022) / 모범직원(2025)", "퇴사여부": ""}, {"연번": "111", "이름": "김현정", "부서": "재무팀", "직위": "파트장", "상벌내용": "일본연수(2019) / 10년 근속(2022) / 23.06 절약왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "112", "이름": "정성관", "부서": "전산운영팀", "직위": "팀장", "상벌내용": "일본(2006) / 중국(2008) / 모범직원(2009) / 10년 근속(2015) / 일본(2018) \n 유럽연수(2023) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "113", "이름": "이동원", "부서": "전산운영팀", "직위": "파트장", "상벌내용": "2007상반기우수직원-일본(2007) / 모범직원(2011) / 10년 근속(2015) \n유럽연수(2018) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "114", "이름": "황광진", "부서": "전산운영팀", "직위": "파트장", "상벌내용": "2013상반기우수직원-일본(2013)", "퇴사여부": "2020.08.10 / 2023.09.30"}, {"연번": "115", "이름": "김삼록", "부서": "진단검사의학팀", "직위": "팀장", "상벌내용": "10년 근속(2006) / 2006하반기우수직원-일본(2007) / 3개위원회-중국(2010) \n2015하반기우수직원-태국(2016) / 20년근속(2016) / 모범직원(2017) / 유럽연수(2024)  \n30년 근속(2026)", "퇴사여부": ""}, {"연번": "116", "이름": "이상미", "부서": "진단검사의학팀", "직위": "팀장", "상벌내용": "2008상반기우수직원-중국(2008) / 10년 근속(2012) / 20년 근속(2022)", "퇴사여부": "2022.08.31"}, {"연번": "117", "이름": "진영진", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "10년 근속(2007) / 2008하반기우수직원-태국(2009) / 20년 근속(2017)", "퇴사여부": ""}, {"연번": "118", "이름": "박은아", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "10년 근속(2019)", "퇴사여부": ""}, {"연번": "119", "이름": "김혜원", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "2016상반기우수직원-태국(2016) / 10년 근속(2019)", "퇴사여부": ""}, {"연번": "120", "이름": "노가람", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "21.08 친절왕 / 제주연수(2023) / 10년 근속(2024)", "퇴사여부": "2024.10.05"}, {"연번": "121", "이름": "윤숙현", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "QI경진대회 장려상(2023) / QI경진대회 장려상(2024)", "퇴사여부": ""}, {"연번": "122", "이름": "김미지", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "10년 근속(2021)", "퇴사여부": "2022.05.31"}, {"연번": "123", "이름": "최민선", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "10년 근속(2021)", "퇴사여부": "2022.05.31"}, {"연번": "124", "이름": "허승아", "부서": "진단검사의학팀", "직위": "주임", "상벌내용": "10년 근속(2023)", "퇴사여부": ""}, {"연번": "125", "이름": "최한영", "부서": "진단검사의학팀", "직위": "임상병리사", "상벌내용": "19.09 친절왕 - 일본(2019)", "퇴사여부": "2023.03.17"}, {"연번": "126", "이름": "오진솔", "부서": "진단검사의학팀", "직위": "임상병리사", "상벌내용": "24.08 청결왕 / 일본연수(2024)", "퇴사여부": "2024.12.31"}, {"연번": "127", "이름": "정호재", "부서": "진료협력센터", "직위": "팀장", "상벌내용": "2013하반기우수직원-일본(2014) / 2014하반기우수직원-태국(2015) / 일본연수(2019)", "퇴사여부": "2020.10.22"}, {"연번": "128", "이름": "박창순", "부서": "진료협력센터", "직위": "팀장", "상벌내용": "2008상반기우수직원-중국(2008) / 10년 근속(2015) / 유럽연수(2023) / 20년 근속(2025)\n모범직원(2026)", "퇴사여부": ""}, {"연번": "129", "이름": "이진근", "부서": "진료협력센터", "직위": "팀장 대리", "상벌내용": "19.01 친절왕-일본(2019) / 21.02 친절왕 / 제주연수(2023)", "퇴사여부": "2023.10.16"}, {"연번": "130", "이름": "전엘비라", "부서": "진료협력센터", "직위": "파트원", "상벌내용": "10년 근속(2021)", "퇴사여부": ""}, {"연번": "131", "이름": "하장명", "부서": "진료협력센터", "직위": "팀장대리", "상벌내용": "22.08 친절왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "132", "이름": "강창오", "부서": "장례사업팀", "직위": "팀장", "상벌내용": "10년 근속(2019)", "퇴사여부": "2019.12.31"}, {"연번": "133", "이름": "류소홍", "부서": "미화부", "직위": "용역인원", "상벌내용": "23.05 청결왕", "퇴사여부": ""}, {"연번": "1", "이름": "이지현", "부서": "5병동", "직위": "수간호사", "상벌내용": "10년 근속(2020) / 모범직원(2025) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "2", "이름": "김여경", "부서": "6병동", "직위": "책임간호사", "상벌내용": "2012상반기우수직원 - 태국(2012)", "퇴사여부": "2022.12.09"}, {"연번": "3", "이름": "박현정A", "부서": "6병동", "직위": "수간호사", "상벌내용": "2016상반기우수직원 - 태국(2016) / 모범직원(2025) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "4", "이름": "안정민", "부서": "6병동", "직위": "간호사", "상벌내용": "23.10 친절왕", "퇴사여부": "2024.03.31"}, {"연번": "5", "이름": "최혜정", "부서": "6병동", "직위": "간호사", "상벌내용": "20.10 친절왕 / 10년 근속(2025)", "퇴사여부": ""}, {"연번": "6", "이름": "김혜경", "부서": "7병동", "직위": "수간호사", "상벌내용": "10년 근속(2007) / 모범직원(2010) / 20년 근속(2017)-유럽 (2017)", "퇴사여부": ""}, {"연번": "7", "이름": "강인주", "부서": "7병동", "직위": "책임간호사", "상벌내용": "2008상반기우수직원 - 중국(2008)", "퇴사여부": "2022.06.17"}, {"연번": "8", "이름": "최미정B", "부서": "7병동", "직위": "책임간호사", "상벌내용": "2013상반기우수직원-일본(2013) / 10년 근속(2018) / 유럽연수(2017) / 20.06 친절왕", "퇴사여부": "2021.04.13"}, {"연번": "9", "이름": "이지영", "부서": "7병동", "직위": "간호사", "상벌내용": "19.02 친절왕-일본(2019)", "퇴사여부": "2024.05.29"}, {"연번": "10", "이름": "박현경", "부서": "7병동", "직위": "간호사", "상벌내용": "18.01 친절왕 - 일본(2018) / 10년 근속(2022)", "퇴사여부": ""}, {"연번": "11", "이름": "안선애", "부서": "8병동", "직위": "수간호사", "상벌내용": "10년 근속(2022) / 모범직원(2024) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "12", "이름": "심정연", "부서": "8병동", "직위": "수간호사", "상벌내용": "유럽(2018) / 10년 근속(2019)", "퇴사여부": "2022.04.30"}, {"연번": "13", "이름": "황정헤", "부서": "8병동", "직위": "책임간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "14", "이름": "김윤영", "부서": "8병동", "직위": "책임간호사", "상벌내용": "2012하반기우수직원-일본(2013) / 10년 근속(2018)", "퇴사여부": "2021.03.31"}, {"연번": "15", "이름": "이혜란", "부서": "8병동", "직위": "간호사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "16", "이름": "박지민", "부서": "9병동", "직위": "수간호사", "상벌내용": "2007하반기우수직원-일본(2008) / 10년 근속(2015) / 2018모범직원 - 일본(2018)\n유럽연수(2022) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "17", "이름": "이세영", "부서": "9병동", "직위": "책임간호사", "상벌내용": "유럽연수(2024) / 10년 근속(2025)", "퇴사여부": ""}, {"연번": "18", "이름": "최보미", "부서": "9병동", "직위": "간호사", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "19", "이름": "김동완", "부서": "9병동", "직위": "간호사", "상벌내용": "22.06 친절왕", "퇴사여부": "2023.11.18"}, {"연번": "20", "이름": "한은선", "부서": "9병동", "직위": "간호사", "상벌내용": "일본(2019) / 10년 근속(2022)", "퇴사여부": "2023.02.21"}, {"연번": "21", "이름": "김민지", "부서": "9병동", "직위": "간호사", "상벌내용": "24.10 친절왕", "퇴사여부": "2025.04.30"}, {"연번": "22", "이름": "한지혜", "부서": "9병동", "직위": "간호사", "상벌내용": "25.02 청결왕", "퇴사여부": ""}, {"연번": "23", "이름": "최예솔", "부서": "9병동", "직위": "간호사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "24", "이름": "임미영", "부서": "10병동", "직위": "수간호사", "상벌내용": "2013하반기우수직원 - 일본(2014) / 유럽연수(2023) / 모범직원(2024)  / 일본연수(2024)\n20년 근속(2026)", "퇴사여부": ""}, {"연번": "25", "이름": "강민지", "부서": "10병동", "직위": "간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "26", "이름": "염민희", "부서": "10병동", "직위": "간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "27", "이름": "이수빈", "부서": "10병동", "직위": "간호사", "상벌내용": "QI경진대회 장려상(2024)", "퇴사여부": ""}, {"연번": "28", "이름": "송배원", "부서": "10병동", "직위": "간호조무사", "상벌내용": "23.03 친절왕 / 일본연수(2023)", "퇴사여부": "2025.04.11"}, {"연번": "29", "이름": "강경진", "부서": "11병동", "직위": "수간호사", "상벌내용": "2014상반기우수직원 - 태국(2014) / 유럽연수(2017) / 10년 근속(2018) / 모범직원(2023)", "퇴사여부": ""}, {"연번": "30", "이름": "김소미", "부서": "11병동", "직위": "책임간호사", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "31", "이름": "김보미B", "부서": "11병동", "직위": "간호사", "상벌내용": "19.03 친절왕 - 일본(2019)", "퇴사여부": "2024.03.31"}, {"연번": "32", "이름": "서슬기", "부서": "11병동", "직위": "간호사", "상벌내용": "22.04 친절왕", "퇴사여부": "2025.03.25"}, {"연번": "33", "이름": "김지현C", "부서": "11병동", "직위": "간호사", "상벌내용": "24.12 절약왕", "퇴사여부": ""}, {"연번": "34", "이름": "양현미", "부서": "11병동", "직위": "간호조무사", "상벌내용": "24.01 친절왕  / 일본연수(2024)", "퇴사여부": ""}, {"연번": "35", "이름": "김은미", "부서": "11병동", "직위": "간호사", "상벌내용": "모범직원(2026)", "퇴사여부": ""}, {"연번": "36", "이름": "전홍희", "부서": "12병동", "직위": "수간호사", "상벌내용": "2012하반기우수직원 - 일본(2013) / 모범직원(2019) / 유럽연수(2023)\n20년 근속(2026)", "퇴사여부": ""}, {"연번": "37", "이름": "김보미", "부서": "12병동", "직위": "책임간호사", "상벌내용": "2016상반기우수직원 - 태국(2016) / 10년 근속(2019)", "퇴사여부": ""}, {"연번": "38", "이름": "김진하", "부서": "12병동", "직위": "책임간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "39", "이름": "조민지", "부서": "12병동", "직위": "간호사", "상벌내용": "23.08 청결왕", "퇴사여부": ""}, {"연번": "40", "이름": "김지현", "부서": "12병동", "직위": "간호사", "상벌내용": "일본(2019)", "퇴사여부": "2021.09.12"}, {"연번": "41", "이름": "김수진", "부서": "13병동", "직위": "수간호사", "상벌내용": "10년 근속(2020)", "퇴사여부": "2023.06.30"}, {"연번": "42", "이름": "최정영", "부서": "A7병동", "직위": "수간호사", "상벌내용": "모범직원(2021)", "퇴사여부": ""}, {"연번": "43", "이름": "오수지", "부서": "A7병동", "직위": "간호사", "상벌내용": "22.11 친절왕 / 일본연수(2023) / QI경진대회 우수상(2023)", "퇴사여부": ""}, {"연번": "44", "이름": "엄영미", "부서": "A8병동", "직위": "간호팀장", "상벌내용": "3개위원회-중국(2010) / 모범직원(2012) / 유럽(2017) / 10년 근속(2018)", "퇴사여부": ""}, {"연번": "45", "이름": "김지원", "부서": "A8병동", "직위": "책임간호사", "상벌내용": "일본(2019)", "퇴사여부": "2023.07.23"}, {"연번": "46", "이름": "최현주", "부서": "A9병동", "직위": "수간호사", "상벌내용": "2022 모범직원 / 10년 근속(2022) / 유럽연수(2022)", "퇴사여부": ""}, {"연번": "47", "이름": "백송이", "부서": "A9병동", "직위": "간호사", "상벌내용": "2015하반기우수직원 - 태국(2016) / 10년 근속(2021)", "퇴사여부": ""}, {"연번": "48", "이름": "구은정", "부서": "A10병동", "직위": "책임간호사", "상벌내용": "20.08 친절왕 / 10년 근속(2023) / 모범직원(2026)", "퇴사여부": ""}, {"연번": "49", "이름": "송지혜", "부서": "A10병동", "직위": "간호조무사", "상벌내용": "25.05 친절왕", "퇴사여부": ""}, {"연번": "50", "이름": "강선영", "부서": "QPS실", "직위": "팀장", "상벌내용": "2006하반기우수직원 - 일본(2007) / 10년 근속(2015) / 모범직원(2017) / 유럽연수(2022)", "퇴사여부": "2024.07.15"}, {"연번": "51", "이름": "김제연", "부서": "QPS실", "직위": "팀장", "상벌내용": "2007상반기우수직원-일본(2007) / 모범직원(2016) / 일본(2018) / 유럽연수(2022)\n20년 근속(2026)", "퇴사여부": ""}, {"연번": "52", "이름": "김경미", "부서": "간호부", "직위": "간호부장", "상벌내용": "일본(2006) / 2008모범직원(2008) - 중국(2008) / 10년 근속(2015) / 유럽연수(2022)\n20년 근속(2025)", "퇴사여부": ""}, {"연번": "53", "이름": "공수영", "부서": "간호부", "직위": "간호과장", "상벌내용": "2006하반기우수직원-일본(2007) / 모범직원(2013) / 10년 근속(2015) \n유럽연수(2018) / 일본연수(2019) / 20년 근속(2025)", "퇴사여부": "2025.05.12"}, {"연번": "54", "이름": "고경아", "부서": "간호부", "직위": "수간호사", "상벌내용": "2007상반기우수직원-일본(2007) / 10년 근속(2011) / 모범직원(2014) / 20년 근속(2021) \n유럽연수(2022)", "퇴사여부": ""}, {"연번": "55", "이름": "강자영", "부서": "간호부", "직위": "간호사", "상벌내용": "일본(2019) / 10년 근속(2022)", "퇴사여부": ""}, {"연번": "56", "이름": "김규연", "부서": "간호부", "직위": "간호조무사", "상벌내용": "21.01 친절왕", "퇴사여부": "2022.01.31"}, {"연번": "57", "이름": "조정숙", "부서": "감염관리실", "직위": "팀장", "상벌내용": "10년 근속(2011) / 2014하반기우수직원 - 태국(2015) / 모범직원(2015) / 일본(2018)", "퇴사여부": "2019.12.31"}, {"연번": "58", "이름": "김혜련", "부서": "감염관리실", "직위": "팀장", "상벌내용": "20.03 친절왕", "퇴사여부": "2020.07.09"}, {"연번": "59", "이름": "서우희", "부서": "감염관리실", "직위": "팀장", "상벌내용": "모범직원(2021) / 유럽연수(2022)", "퇴사여부": ""}, {"연번": "60", "이름": "김현주A", "부서": "감염관리실", "직위": "간호사", "상벌내용": "2013하반기우수직원 - 일본(2014)", "퇴사여부": "2023.09.30"}, {"연번": "61", "이름": "김은주", "부서": "건강증진센터", "직위": "간호과장", "상벌내용": "일본(2006) / 2009모범직원(2009) / 10년 근속(2007) / 3개위원회 - 중국(2010) \n20년 근속 - 유럽(2017) / 모범직원(2017)", "퇴사여부": "2024.01.31"}, {"연번": "62", "이름": "이아름B", "부서": "건강증진센터", "직위": "책임간호사", "상벌내용": "25.01 친절왕", "퇴사여부": ""}, {"연번": "63", "이름": "장은정", "부서": "건강증진센터", "직위": "간호조무사", "상벌내용": "25.02 청결왕", "퇴사여부": ""}, {"연번": "64", "이름": "조영선", "부서": "내시경실", "직위": "수간호사", "상벌내용": "2006상반기우수직원 / 모범직원(2020) / 유럽연수(2023) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "65", "이름": "최정인", "부서": "내시경실", "직위": "간호사", "상벌내용": "10년 근속(2020)", "퇴사여부": "2021.10.08"}, {"연번": "66", "이름": "윤수경", "부서": "내시경실", "직위": "간호사", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "67", "이름": "송혜정A", "부서": "내시경실", "직위": "간호사", "상벌내용": "2015하반기우수직원 - 태국(2016) / 10년 근속(2022)", "퇴사여부": ""}, {"연번": "68", "이름": "이지수", "부서": "보건관리실", "직위": "간호사", "상벌내용": "10년 근속(2020)", "퇴사여부": ""}, {"연번": "69", "이름": "이수빈", "부서": "수술실", "직위": "수간호사", "상벌내용": "모범직원(2016)", "퇴사여부": "2020.05.20"}, {"연번": "70", "이름": "정혜영", "부서": "수술실", "직위": "책임간호사", "상벌내용": "2006하반기우수직원-일본(2007) / 우수직원 - 유럽(2019) / 20년 근속(2024)", "퇴사여부": ""}, {"연번": "71", "이름": "권주현", "부서": "수술실", "직위": "책임간호사", "상벌내용": "2008하반기우수직원 - 태국(2009) / 10년 근속(2015) / 유럽연수(2024) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "72", "이름": "김혜선", "부서": "수술실", "직위": "책임간호사", "상벌내용": "2014상반기우수직원 - 태국(2014) / 유럽연수(2025) / 20년 근속(2026)", "퇴사여부": ""}, {"연번": "73", "이름": "안정현", "부서": "수술실", "직위": "간호사", "상벌내용": "10년 근속(2008) / 모범직원(2014) / 20년 근속(2018)-유럽연수(2018)", "퇴사여부": ""}, {"연번": "74", "이름": "이아름", "부서": "수술실", "직위": "간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "75", "이름": "박솔형", "부서": "수술실", "직위": "간호사", "상벌내용": "18.03 친절왕 - 일본(2018)", "퇴사여부": "2021.04.15"}, {"연번": "76", "이름": "곽민희", "부서": "수술실", "직위": "간호사", "상벌내용": "2011상반기우수직원 - 중국(2011)  / 20년 근속(2026)", "퇴사여부": ""}, {"연번": "77", "이름": "최혜원", "부서": "수술실", "직위": "간호사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "78", "이름": "우중일", "부서": "수술실", "직위": "간호조무사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "79", "이름": "천상진", "부서": "수술실", "직위": "간호조무사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "80", "이름": "박원철", "부서": "수술실", "직위": "간호조무사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "81", "이름": "김경도", "부서": "수술실", "직위": "응급구조사", "상벌내용": "2012하반기우수직원-일본(2013) / 10년 근속(2015) / 우수직원 - 유럽연수(2019)", "퇴사여부": "2019.12.31 / 2025.12.17"}, {"연번": "82", "이름": "정혜지", "부서": "외래", "직위": "책임간호사", "상벌내용": "10년 근속(2022)", "퇴사여부": "2023.09.30"}, {"연번": "83", "이름": "최보금", "부서": "외래", "직위": "책임간호사", "상벌내용": "10년 근속(2022)", "퇴사여부": "2022.07.15"}, {"연번": "84", "이름": "전유정", "부서": "외래", "직위": "책임간호사", "상벌내용": "18.04 친절왕 - 일본(2018) / 10년 근속(2022)", "퇴사여부": ""}, {"연번": "85", "이름": "정지영", "부서": "외래", "직위": "책임간호사", "상벌내용": "2008하반기우수직원-태국(2009) / 10년 근속(2015) / 모범직원(2019)\n우수직원 - 유럽(2024) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "86", "이름": "염귀균", "부서": "외래", "직위": "책임간호사", "상벌내용": "2011하반기우수직원-태국(2012) / 10년 근속(2018)", "퇴사여부": ""}, {"연번": "87", "이름": "강보명", "부서": "외래", "직위": "간호사", "상벌내용": "22.03 친절왕 / 제주연수(2023)", "퇴사여부": ""}, {"연번": "88", "이름": "최연주", "부서": "외래", "직위": "간호사", "상벌내용": "10년 근속(2021)", "퇴사여부": "2022.03.31"}, {"연번": "89", "이름": "천우리", "부서": "외래", "직위": "간호사", "상벌내용": "19.07 친절왕 - 일본(2019) / 10년 근속(2021)", "퇴사여부": ""}, {"연번": "90", "이름": "최혜영", "부서": "외래", "직위": "간호사", "상벌내용": "2010하반기우수직원-태국(2011) / 10년 근속(2019)", "퇴사여부": "2019.09.30"}, {"연번": "91", "이름": "강미화", "부서": "외래", "직위": "간호사", "상벌내용": "2014상반기우수직원-태국(2014) / 10년 근속(2020)", "퇴사여부": "2020.05.31"}, {"연번": "92", "이름": "장지원", "부서": "외래", "직위": "간호사", "상벌내용": "23.02 친절왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "93", "이름": "김홍희", "부서": "외래", "직위": "간호사", "상벌내용": "우수직원 - 유럽연수(2019)", "퇴사여부": "2020.04.30"}, {"연번": "94", "이름": "장윤진", "부서": "외래", "직위": "간호사", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "95", "이름": "추수명", "부서": "외래", "직위": "간호사", "상벌내용": "2011상반기우수직원 - 중국(2011) / 모범직원(2020) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "96", "이름": "유혜진", "부서": "외래", "직위": "간호사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "97", "이름": "김봉수", "부서": "외래", "직위": "간호사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "98", "이름": "강주영", "부서": "외래", "직위": "주임조무사", "상벌내용": "2015상반기우수직원-일본(2015) / 유럽연수(2024) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "99", "이름": "권보경", "부서": "외래", "직위": "간호조무사", "상벌내용": "10년 근속(2018) / 유럽연수(2023)", "퇴사여부": ""}, {"연번": "100", "이름": "김경미B", "부서": "외래", "직위": "간호조무사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "101", "이름": "남윤아", "부서": "외래", "직위": "간호조무사", "상벌내용": "19.05 친절왕 - 일본연수(2019) / 10년 근속(2026)", "퇴사여부": ""}, {"연번": "102", "이름": "김민정", "부서": "외래", "직위": "간호조무사", "상벌내용": "20.05 친절왕", "퇴사여부": "2019.12.31"}, {"연번": "103", "이름": "김효영", "부서": "외래", "직위": "간호조무사", "상벌내용": "20.07 친절왕 / 유럽연수(2025) / 10년 근속(2026)", "퇴사여부": ""}, {"연번": "104", "이름": "고슬기", "부서": "외래", "직위": "간호조무사", "상벌내용": "20.09 친절왕", "퇴사여부": ""}, {"연번": "105", "이름": "이수경", "부서": "외래", "직위": "간호조무사", "상벌내용": "2013상반기우수직원-일본(2013) / 유럽연수(2025)", "퇴사여부": ""}, {"연번": "106", "이름": "최송희", "부서": "외래", "직위": "간호조무사", "상벌내용": "21.05 친절왕", "퇴사여부": "2022.02.28"}, {"연번": "107", "이름": "강한나", "부서": "외래", "직위": "간호조무사", "상벌내용": "22.02 친절왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "108", "이름": "이선주", "부서": "외래", "직위": "간호조무사", "상벌내용": "22.09 친절왕", "퇴사여부": ""}, {"연번": "109", "이름": "김민재", "부서": "외래", "직위": "간호조무사", "상벌내용": "23.09 절약왕 / 일본연수(2023)", "퇴사여부": ""}, {"연번": "110", "이름": "김창순", "부서": "외래", "직위": "간호조무사", "상벌내용": "24.03 절약왕  / 일본연수(2024)", "퇴사여부": ""}, {"연번": "111", "이름": "김상은", "부서": "외래", "직위": "간호조무사", "상벌내용": "24.05 청결왕", "퇴사여부": ""}, {"연번": "112", "이름": "조여진", "부서": "외래", "직위": "간호조무사", "상벌내용": "18.02 친절왕 / 10년 근속(2019) / 유럽연수(2024)", "퇴사여부": ""}, {"연번": "113", "이름": "문해숙", "부서": "외래", "직위": "간호조무사", "상벌내용": "10년 근속(2026)", "퇴사여부": ""}, {"연번": "114", "이름": "김선영", "부서": "외래", "직위": "치위생사", "상벌내용": "19.04 친절왕 / 10년 근속(2026)", "퇴사여부": ""}, {"연번": "115", "이름": "전희정", "부서": "응급실", "직위": "수간호사", "상벌내용": "2007하반기우수직원 - 일본(2008) / 모범직원 - 일본(2018) / 유럽연수(2019)", "퇴사여부": ""}, {"연번": "116", "이름": "박미영", "부서": "응급실", "직위": "책임간호사", "상벌내용": "10년 근속(2022)", "퇴사여부": ""}, {"연번": "117", "이름": "이영희", "부서": "응급실", "직위": "책임간호사", "상벌내용": "10년 근속(2025)", "퇴사여부": ""}, {"연번": "118", "이름": "박지혜", "부서": "응급실", "직위": "간호사", "상벌내용": "19.10 친절왕 - 일본(2019)", "퇴사여부": "2022.04.30"}, {"연번": "119", "이름": "김태영", "부서": "응급실", "직위": "간호사", "상벌내용": "2013년하반기우수직원 - 일본(2014)", "퇴사여부": "2024.02.29"}, {"연번": "120", "이름": "박미화", "부서": "응급실", "직위": "간호사", "상벌내용": "2015하반기우수직원 - 태국(2016) / 18.11 친절왕 - 일본(2019)", "퇴사여부": ""}, {"연번": "121", "이름": "제수진", "부서": "응급실", "직위": "간호사", "상벌내용": "21.10 친절왕 / 제주연수(2023)", "퇴사여부": "2024.02.29"}, {"연번": "122", "이름": "공민주", "부서": "응급실", "직위": "간호사", "상벌내용": "24.09 절약왕 / 일본연수(2024)", "퇴사여부": ""}, {"연번": "123", "이름": "반혜정", "부서": "인공신장실", "직위": "간호팀장", "상벌내용": "일본(2006) / 모범직원(2009) / 10년 근속(2015) / 유럽연수(2022) / 20년 근속(2025)", "퇴사여부": ""}, {"연번": "124", "이름": "김지수", "부서": "인공신장실", "직위": "책임간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "125", "이름": "이윤정", "부서": "인공신장실", "직위": "책임간호사", "상벌내용": "10년 근속(2024)", "퇴사여부": ""}, {"연번": "126", "이름": "황지현", "부서": "인공신장실", "직위": "책임간호사", "상벌내용": "18.06 친절왕 - 일본(2018) / 10년 근속(2024)", "퇴사여부": ""}, {"연번": "127", "이름": "김지안", "부서": "인공신장실", "직위": "책임간호사", "상벌내용": "21.12 친절왕 / 제주연수(2023) / 10년 근속(2025)", "퇴사여부": ""}, {"연번": "128", "이름": "백은솔", "부서": "주사실", "직위": "책임간호사", "상벌내용": "10년 근속(2019)", "퇴사여부": ""}, {"연번": "129", "이름": "이지란", "부서": "주사실", "직위": "간호사", "상벌내용": "24.11 친절왕", "퇴사여부": ""}, {"연번": "130", "이름": "구태희", "부서": "중앙공급실", "직위": "간호사", "상벌내용": "유럽연수(2023)", "퇴사여부": ""}, {"연번": "131", "이름": "송혜진", "부서": "중환자실", "직위": "수간호사", "상벌내용": "2010하반기우수직원 - 태국(2011) / 우수직원 - 유럽(2019) / 모범직원(2020)", "퇴사여부": ""}, {"연번": "132", "이름": "김선민", "부서": "중환자실", "직위": "책임간호사", "상벌내용": "10년 근속(2018) / 우수직원 - 유럽(2019) / 모범직원(2022) / 일본연수(2023)", "퇴사여부": ""}, {"연번": "133", "이름": "조현화", "부서": "중환자실", "직위": "책임간호사", "상벌내용": "QI경진대회 장려상(2023)", "퇴사여부": ""}, {"연번": "134", "이름": "신화경", "부서": "중환자실", "직위": "간호사", "상벌내용": "19.12 친절왕", "퇴사여부": "2021.04.04"}, {"연번": "135", "이름": "김창규", "부서": "중환자실", "직위": "간호사", "상벌내용": "22.10 친절왕", "퇴사여부": "2023.03.31"}];
+
+const CAT_CONFIG = {
+  '10년근속': { icon:'🏆', label:'10년 근속', cls:'cat-10근속' },
+  '20년근속': { icon:'🥇', label:'20년 근속', cls:'cat-20근속' },
+  '30년근속': { icon:'💎', label:'30년 근속', cls:'cat-30근속' },
+  '유럽연수': { icon:'✈️', label:'유럽 연수', cls:'cat-유럽연수' },
+  '일본연수': { icon:'🗾', label:'일본 연수', cls:'cat-일본연수' },
+  '친절왕': { icon:'😊', label:'친절왕', cls:'cat-친절왕' },
+  '청결왕': { icon:'✨', label:'청결왕', cls:'cat-청결왕' },
+  '절약왕': { icon:'💰', label:'절약왕', cls:'cat-절약왕' },
+  '모범직원': { icon:'⭐', label:'모범직원', cls:'cat-모범직원' },
+  '기타포상': { icon:'🎖️', label:'기타', cls:'cat-기타포상' },
+  '징계': { icon:'⚠️', label:'징계', cls:'cat-징계' }
+};
+
+const YEARS = ['2026','2025','2024','2023','2022','2021','2020','2019','2018','2017'];
+let activeCat = '';
+let yearlyPage=1, peoplePage=1, catPage=1, noawardPage=1;
+const PAGE_SIZE=20, CARD_SIZE=12;
+
+function badgeHtml(category) {
+  const c = CAT_CONFIG[category]||{icon:'🎖️',label:category,cls:'cat-기타포상'};
+  return `<span class="badge ${c.cls}">${c.icon} ${c.label}</span>`;
+}
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='yearly') renderYearly();
+  if(name==='people') renderPeople();
+  if(name==='category') renderCategory();
+  if(name==='noaward') renderNoAward();
+  if(name==='datamgmt') renderDataMgmt();
+}
+
+// ===== DASHBOARD =====
+function buildDashboard() {
+  const counts={};
+  AWARDS.forEach(a=>{ counts[a.category]=(counts[a.category]||0)+1; });
+
+  const statData=[
+    {label:'총 포상 건수',value:AWARDS.filter(a=>a.구분==='포상').length,icon:'🏅',color:'#4f9cf9',catKey:'__total__'},
+    {label:'10년 근속',value:counts['10년근속']||0,icon:'🏆',color:'#4f9cf9',catKey:'10년근속'},
+    {label:'20년 근속',value:counts['20년근속']||0,icon:'🥇',color:'#38d9a9',catKey:'20년근속'},
+    {label:'30년 근속',value:counts['30년근속']||0,icon:'💎',color:'#a9e34b',catKey:'30년근속'},
+    {label:'유럽 연수',value:counts['유럽연수']||0,icon:'✈️',color:'#9f7aea',catKey:'유럽연수'},
+    {label:'일본 연수',value:counts['일본연수']||0,icon:'🗾',color:'#f0a500',catKey:'일본연수'},
+    {label:'친절왕',value:counts['친절왕']||0,icon:'😊',color:'#f783ac',catKey:'친절왕'},
+    {label:'모범직원',value:counts['모범직원']||0,icon:'⭐',color:'#ff922b',catKey:'모범직원'},
+  ];
+  document.getElementById('statsGrid').innerHTML=statData.map(s=>`
+    <div class="stat-card" style="--card-color:${s.color}" onclick="openCatModal('${s.catKey||''}','${s.label}','${s.icon}','${s.color}')" title="${s.label} 현황 보기">
+      <div class="stat-icon">${s.icon}</div>
+      <div class="stat-number">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:6px;opacity:0.7;">▶ 클릭하여 현황 보기</div>
+    </div>`).join('');
+
+  const yearCounts={};
+  YEARS.forEach(y=>{yearCounts[y]=0;});
+  AWARDS.forEach(a=>{if(yearCounts[a.연도]!==undefined)yearCounts[a.연도]++;});
+  const maxY=Math.max(...Object.values(yearCounts));
+  document.getElementById('yearChart').innerHTML=[...YEARS].reverse().map(y=>`
+    <div class="year-bar-wrap">
+      <div class="year-bar-count">${yearCounts[y]}</div>
+      <div class="year-bar" style="height:${Math.round((yearCounts[y]/maxY)*110)+8}px" title="${y}년 ${yearCounts[y]}건"></div>
+      <div class="year-bar-label">${y}</div>
+    </div>`).join('');
+
+  const maxC=Math.max(...Object.values(counts));
+  const catOrder=['10년근속','20년근속','30년근속','유럽연수','일본연수','친절왕','청결왕','절약왕','모범직원','기타포상'];
+  document.getElementById('catChart').innerHTML=catOrder.map(cat=>{
+    const c=CAT_CONFIG[cat];
+    const cnt=counts[cat]||0;
+    const pct=Math.round((cnt/maxC)*100);
+    return `<div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:85px;font-size:11px;color:var(--text-muted);text-align:right;">${c.icon} ${c.label}</div>
+      <div style="flex:1;background:var(--surface2);border-radius:4px;height:18px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),rgba(79,156,249,0.4));border-radius:4px;"></div>
+      </div>
+      <div style="width:28px;font-size:12px;font-weight:700;color:var(--accent);">${cnt}</div>
+    </div>`;
+  }).join('');
+
+  const recentYears=['2026','2025','2024','2023','2022'];
+  const catCols=['10년근속','20년근속','30년근속','유럽연수','일본연수','친절왕','청결왕','절약왕','모범직원'];
+  document.getElementById('recentTableBody').innerHTML=recentYears.map(y=>{
+    const yd=AWARDS.filter(a=>a.연도===y);
+    const cols=catCols.map(cat=>{
+      const cnt=yd.filter(a=>a.category===cat).length;
+      return `<td style="text-align:center;">${cnt>0?`<strong style="color:var(--accent)">${cnt}</strong>`:'<span style="color:var(--border)">-</span>'}</td>`;
+    }).join('');
+    return `<tr><td><span class="year-badge">${y}</span></td>${cols}<td style="text-align:center;font-weight:700;">${yd.length}</td></tr>`;
+  }).join('');
+}
+
+// ===== YEARLY =====
+function initFilters() {
+  const yf=document.getElementById('yearlyYearFilter');
+  const cf=document.getElementById('yearlyCatFilter');
+  const cyf=document.getElementById('catYearFilter');
+  YEARS.forEach(y=>{
+    yf.innerHTML+=`<option value="${y}">${y}년</option>`;
+    cyf.innerHTML+=`<option value="${y}">${y}년</option>`;
+  });
+  Object.entries(CAT_CONFIG).forEach(([k,v])=>{
+    cf.innerHTML+=`<option value="${k}">${v.icon} ${v.label}</option>`;
+  });
+}
+
+function getYearlyFiltered() {
+  const year=document.getElementById('yearlyYearFilter').value;
+  const cat=document.getElementById('yearlyCatFilter').value;
+  const q=document.getElementById('yearlySearch').value.toLowerCase();
+  return AWARDS.filter(a=>{
+    if(year&&a.연도!==year)return false;
+    if(cat&&a.category!==cat)return false;
+    if(q&&!a.이름.includes(q)&&!a.부서.toLowerCase().includes(q)&&!a.내용.toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+
+function renderYearly() { yearlyPage=1; updateYearly(); }
+function updateYearly() {
+  const data=getYearlyFiltered();
+  const page=data.slice((yearlyPage-1)*PAGE_SIZE, yearlyPage*PAGE_SIZE);
+  document.getElementById('yearlyCount').innerHTML=`총 <strong>${data.length}</strong>건`;
+  if(!page.length) {
+    document.getElementById('yearlyTableBody').innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">🔍</div>검색 결과 없음</div></td></tr>`;
+  } else {
+    document.getElementById('yearlyTableBody').innerHTML=page.map((a,i)=>`
+      <tr>
+        <td><span class="year-badge">${a.연도}</span></td>
+        <td style="text-align:center;"><span class="seq-num">${(yearlyPage-1)*PAGE_SIZE+i+1}</span></td>
+        <td>${badgeHtml(a.category)}</td>
+        <td style="font-weight:600;">${a.이름}</td>
+        <td style="color:var(--text-muted)">${a.부서}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${a.직책}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${a.일시}</td>
+        <td>${a.내용}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${a.비고&&a.비고!=='nan'?a.비고:''}</td>
+      </tr>`).join('');
+  }
+  renderPagination('yearlyPagination',data.length,PAGE_SIZE,yearlyPage,p=>{yearlyPage=p;updateYearly();});
+}
+
+// ===== PEOPLE =====
+// 재직 상태 판별 헬퍼
+function getEmployStatus(p) {
+  const val = (p.퇴사여부 || '').trim();
+  if(!val || val === 'nan') return '재직';
+  if(val.includes('재입사')) return '재입사';
+  return '퇴사';
+}
+
+function getPeopleFiltered() {
+  const q=document.getElementById('peopleSearch').value.toLowerCase();
+  const status=document.getElementById('peopleStatusFilter').value;
+  return INDIVIDUALS.filter(p=>{
+    const empStatus = getEmployStatus(p);
+    if(status && empStatus !== status) return false;
+    if(q&&!p.이름.toLowerCase().includes(q)&&!p.부서.toLowerCase().includes(q)&&!p.상벌내용.toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+
+function renderPeople() { peoplePage=1; updatePeople(); }
+function updatePeople() {
+  const data=getPeopleFiltered();
+  const page=data.slice((peoplePage-1)*CARD_SIZE,peoplePage*CARD_SIZE);
+  document.getElementById('peopleCount').innerHTML=`총 <strong>${data.length}</strong>명`;
+  if(!page.length) {
+    document.getElementById('peopleGrid').innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👤</div>검색 결과 없음</div>`;
+  } else {
+    document.getElementById('peopleGrid').innerHTML=page.map(p=>{
+      const empStatus = getEmployStatus(p);
+      const resigned = empStatus === '퇴사';
+      const reinstate = empStatus === '재입사';
+      const content=p.상벌내용||'';
+      const tags=[];
+      if(content.includes('30년'))tags.push('<span class="badge cat-30근속">💎 30년근속</span>');
+      if(content.includes('20년'))tags.push('<span class="badge cat-20근속">🥇 20년근속</span>');
+      if(content.includes('10년'))tags.push('<span class="badge cat-10근속">🏆 10년근속</span>');
+      if(content.includes('유럽'))tags.push('<span class="badge cat-유럽연수">✈️ 유럽연수</span>');
+      if(content.includes('일본')||content.includes('해외')||content.includes('우수직원'))tags.push('<span class="badge cat-일본연수">🗾 일본연수</span>');
+      if(content.includes('친절왕'))tags.push('<span class="badge cat-친절왕">😊 친절왕</span>');
+      if(content.includes('청결왕'))tags.push('<span class="badge cat-청결왕">✨ 청결왕</span>');
+      if(content.includes('절약왕'))tags.push('<span class="badge cat-절약왕">💰 절약왕</span>');
+      if(content.includes('모범')||content.includes('개원기념'))tags.push('<span class="badge cat-모범직원">⭐ 모범직원</span>');
+      const initials=p.이름.slice(-1);
+      return `<div class="person-card ${resigned?'resigned':reinstate?'reinstate':''}">
+        <div class="card-header">
+          <div class="card-avatar ${resigned||reinstate?'gray':''}">${initials}</div>
+          <div>
+            <div class="card-name">${p.이름} ${resigned?'<span style="font-size:10px;color:var(--red)">퇴사</span>':reinstate?'<span style="font-size:10px;color:var(--purple)">재입사</span>':''}</div>
+            <div class="card-dept">${p.부서} · ${p.직위}</div>
+          </div>
+        </div>
+        <div class="card-tags">${tags.length?tags.join(''):content}</div>
+        ${resigned?`<div class="card-resigned">📅 퇴사: ${p.퇴사여부}</div>`:''}
+        ${reinstate?`<div style="font-size:11px;color:var(--purple);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">🔄 ${p.퇴사여부}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+  renderPagination('peoplePagination',data.length,CARD_SIZE,peoplePage,p=>{peoplePage=p;updatePeople();});
+}
+
+// ===== CATEGORY =====
+function buildCatFilter() {
+  const counts={};
+  AWARDS.forEach(a=>{counts[a.category]=(counts[a.category]||0)+1;});
+  document.getElementById('catFilter').innerHTML=[
+    `<div class="cat-pill ${activeCat===''?'active':''}" onclick="selectCat('')">전체 ${AWARDS.length}</div>`,
+    ...Object.entries(CAT_CONFIG).map(([k,v])=>`
+      <div class="cat-pill ${activeCat===k?'active':''}" onclick="selectCat('${k}')">${v.icon} ${v.label} ${counts[k]||0}</div>`)
+  ].join('');
+}
+
+function selectCat(cat) { activeCat=cat; buildCatFilter(); renderCategory(); }
+
+function getCatFiltered() {
+  const year=document.getElementById('catYearFilter').value;
+  const q=document.getElementById('catSearch').value.toLowerCase();
+  return AWARDS.filter(a=>{
+    if(activeCat&&a.category!==activeCat)return false;
+    if(year&&a.연도!==year)return false;
+    if(q&&!a.이름.toLowerCase().includes(q)&&!a.부서.toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+
+function renderCategory() { catPage=1; updateCategory(); }
+function updateCategory() {
+  const data=getCatFiltered();
+  const page=data.slice((catPage-1)*PAGE_SIZE,catPage*PAGE_SIZE);
+  document.getElementById('catCount').innerHTML=`총 <strong>${data.length}</strong>건`;
+  if(!page.length) {
+    document.getElementById('catTableBody').innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">🏅</div>검색 결과 없음</div></td></tr>`;
+  } else {
+    document.getElementById('catTableBody').innerHTML=page.map((a,i)=>`
+      <tr>
+        <td><span class="year-badge">${a.연도}</span></td>
+        <td style="text-align:center;"><span class="seq-num">${(catPage-1)*PAGE_SIZE+i+1}</span></td>
+        <td style="font-weight:600;">${a.이름}</td>
+        <td style="color:var(--text-muted)">${a.부서}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${a.직책}</td>
+        <td>${badgeHtml(a.category)}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${a.일시}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${a.선정기준&&a.선정기준!=='nan'?a.선정기준:''}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${a.비고&&a.비고!=='nan'?a.비고:''}</td>
+      </tr>`).join('');
+  }
+  renderPagination('catPagination',data.length,PAGE_SIZE,catPage,p=>{catPage=p;updateCategory();});
+}
+
+// ===== NO AWARD =====
+function hasAward(content, cat) {
+  if(!content||content==='nan') return false;
+  if(cat==='10년근속') return content.includes('10년');
+  if(cat==='20년근속') return content.includes('20년');
+  if(cat==='30년근속') return content.includes('30년');
+  if(cat==='유럽연수') return content.includes('유럽');
+  if(cat==='일본연수') return content.includes('일본')||content.includes('해외')||content.includes('우수직원');
+  if(cat==='친절왕') return content.includes('친절왕');
+  if(cat==='청결왕') return content.includes('청결왕');
+  if(cat==='절약왕') return content.includes('절약왕');
+  if(cat==='모범직원') return content.includes('모범')||content.includes('개원기념');
+  return false;
+}
+
+function getAwardTags(content) {
+  const tags=[];
+  if(!content||content==='nan') return '<span style="color:var(--text-muted);font-size:12px;">이력 없음</span>';
+  const cats=['30년근속','20년근속','10년근속','유럽연수','일본연수','친절왕','청결왕','절약왕','모범직원'];
+  const catMap={
+    '30년근속':['cat-30근속','💎'],
+    '20년근속':['cat-20근속','🥇'],
+    '10년근속':['cat-10근속','🏆'],
+    '유럽연수':['cat-유럽연수','✈️'],
+    '일본연수':['cat-일본연수','🗾'],
+    '친절왕':['cat-친절왕','😊'],
+    '청결왕':['cat-청결왕','✨'],
+    '절약왕':['cat-절약왕','💰'],
+    '모범직원':['cat-모범직원','⭐'],
+  };
+  cats.forEach(cat=>{
+    if(hasAward(content,cat)) {
+      const [cls,icon]=catMap[cat];
+      tags.push(`<span class="badge ${cls}">${icon} ${CAT_CONFIG[cat].label}</span>`);
+    }
+  });
+  return tags.length?tags.join(' '):`<span style="color:var(--text-muted);font-size:12px;">${content.substring(0,60)}</span>`;
+}
+
+// 체크박스 상태 읽기
+function getCheckedCats() {
+  const labels = document.querySelectorAll('#awardCheckRow label');
+  const checked = [];
+  labels.forEach(lbl => {
+    const cb = lbl.querySelector('input[type=checkbox]');
+    if(cb && cb.checked) checked.push(lbl.dataset.cat);
+  });
+  return checked;
+}
+
+function getCheckedStatus() {
+  const labels = document.querySelectorAll('#statusCheckRow label');
+  for(const lbl of labels) {
+    const cb = lbl.querySelector('input[type=checkbox]');
+    if(cb && cb.checked) return lbl.dataset.status;
+  }
+  return '전체';
+}
+
+// 체크박스 클릭 시 checked 클래스 토글
+document.addEventListener('change', function(e) {
+  const lbl = e.target.closest('label.check-item');
+  if(!lbl) return;
+  if(lbl.closest('#awardCheckRow')) {
+    lbl.classList.toggle('checked', e.target.checked);
+  }
+});
+
+// 재직/퇴사는 단일 선택 (라디오처럼)
+function handleStatusCheck(val) {
+  const labels = document.querySelectorAll('#statusCheckRow label');
+  labels.forEach(lbl => {
+    const cb = lbl.querySelector('input[type=checkbox]');
+    const isThis = lbl.dataset.status === val;
+    cb.checked = isThis;
+    lbl.classList.toggle('checked', isThis);
+  });
+  renderNoAward();
+}
+
+function resetAwardChecks() {
+  const labels = document.querySelectorAll('#awardCheckRow label');
+  labels.forEach(lbl => {
+    const cb = lbl.querySelector('input[type=checkbox]');
+    // 첫 번째 항목(any)만 체크
+    const isFirst = lbl.dataset.cat === 'any';
+    cb.checked = isFirst;
+    lbl.classList.toggle('checked', isFirst);
+  });
+  renderNoAward();
+}
+
+function getNoAwardFiltered() {
+  const checkedCats = getCheckedCats();
+  const status = getCheckedStatus();
+  const q = document.getElementById('noawardSearch').value.toLowerCase();
+
+  // 선택된 포상유형이 없으면 빈 결과
+  if(checkedCats.length === 0) return [];
+
+  const awardsNames = new Set(AWARDS.map(a=>a.이름));
+
+  return INDIVIDUALS.filter(p=>{
+    const content = p.상벌내용 || '';
+    const empStatus = getEmployStatus(p);
+
+    // 재직 여부 필터
+    if(status !== '전체' && empStatus !== status) return false;
+
+    // 포상유형: 체크된 항목 중 하나라도 해당하면 포함 (OR 조건)
+    const matchesCat = checkedCats.some(cat => {
+      if(cat === 'any') {
+        return !awardsNames.has(p.이름);
+      } else {
+        return !hasAward(content, cat);
+      }
+    });
+    if(!matchesCat) return false;
+
+    // 검색어 (이름/부서/직위)
+    if(q && !p.이름.toLowerCase().includes(q) && !p.부서.toLowerCase().includes(q) && !(p.직위||'').toLowerCase().includes(q)) return false;
+    
+    // 보유 포상이력 키워드 검색
+    const histQ = (document.getElementById('noawardHistorySearch')||{value:''}).value.toLowerCase();
+    if(histQ && !(content.toLowerCase()).includes(histQ)) return false;
+    
+    // 이력 보유 여부
+    const hasHist = (document.getElementById('noawardHasHistory')||{value:''}).value;
+    const noHistory = !content || content==='nan' || content.trim()==='';
+    if(hasHist==='has' && noHistory) return false;
+    if(hasHist==='none' && !noHistory) return false;
+    
+    return true;
+  });
+}
+
+function renderNoAward() { noawardPage=1; updateNoAward(); }
+function updateNoAward() {
+  const data = getNoAwardFiltered();
+  // 연번은 전체 결과 기준 1부터 재부여 (페이지와 무관하게 통합 순번)
+  const page = data.slice((noawardPage-1)*PAGE_SIZE, noawardPage*PAGE_SIZE);
+  const checkedCats = getCheckedCats();
+
+  document.getElementById('noawardCount').innerHTML =
+    checkedCats.length === 0
+      ? '<span style="color:var(--red);">포상 유형을 1개 이상 선택하세요</span>'
+      : `총 <strong>${data.length}</strong>명 조회됨`;
+
+  if(checkedCats.length === 0) {
+    document.getElementById('noawardTableBody').innerHTML =
+      `<tr><td colspan="6"><div class="empty"><div class="empty-icon">☑️</div>위에서 포상 유형을 선택하세요</div></td></tr>`;
+    document.getElementById('noawardPagination').innerHTML = '';
+    return;
+  }
+  if(!page.length) {
+    document.getElementById('noawardTableBody').innerHTML =
+      `<tr><td colspan="6"><div class="empty"><div class="empty-icon">✅</div>해당 조건에 모두 수상하셨습니다</div></td></tr>`;
+    document.getElementById('noawardPagination').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('noawardTableBody').innerHTML = page.map((p, i) => {
+    const empStatus = getEmployStatus(p);
+    const globalSeq = (noawardPage - 1) * PAGE_SIZE + i + 1;
+    return `<tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600;">${globalSeq}</td>
+      <td style="font-weight:600;">${p.이름}</td>
+      <td style="color:var(--text-muted)">${p.부서}</td>
+      <td style="color:var(--text-muted);font-size:12px;">${p.직위||''}</td>
+      <td>${getAwardTags(p.상벌내용)}</td>
+      <td style="text-align:center;">${
+        empStatus === '퇴사'
+          ? `<span style="font-size:11px;color:var(--red);background:rgba(252,109,90,0.1);padding:3px 8px;border-radius:6px;">퇴사</span>`
+          : empStatus === '재입사'
+            ? `<span style="font-size:11px;color:var(--purple);background:rgba(159,122,234,0.1);padding:3px 8px;border-radius:6px;">재입사</span>`
+            : '<span style="font-size:11px;color:var(--green);background:rgba(56,217,169,0.1);padding:3px 8px;border-radius:6px;">재직 중</span>'
+      }</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination('noawardPagination', data.length, PAGE_SIZE, noawardPage, p => { noawardPage = p; updateNoAward(); });
+}
+
+// ===== PAGINATION =====
+function renderPagination(elId, total, size, current, cb) {
+  const pages=Math.ceil(total/size);
+  if(pages<=1){document.getElementById(elId).innerHTML='';return;}
+  let html=`<button class="page-btn" onclick="(${cb})(${current-1})" ${current===1?'disabled':''}>‹</button>`;
+  let start=Math.max(1,current-2),end=Math.min(pages,start+4);
+  if(end-start<4)start=Math.max(1,end-4);
+  if(start>1)html+=`<button class="page-btn" onclick="(${cb})(1)">1</button>${start>2?'<span>…</span>':''}`;
+  for(let i=start;i<=end;i++)html+=`<button class="page-btn ${i===current?'active':''}" onclick="(${cb})(${i})">${i}</button>`;
+  if(end<pages)html+=`${end<pages-1?'<span>…</span>':''}<button class="page-btn" onclick="(${cb})(${pages})">${pages}</button>`;
+  html+=`<button class="page-btn" onclick="(${cb})(${current+1})" ${current===pages?'disabled':''}>›</button>`;
+  html+=`<span style="color:var(--text-muted);font-size:12px;">(${current}/${pages}p)</span>`;
+  document.getElementById(elId).innerHTML=html;
+}
+
+// ===== DATA MANAGEMENT =====
+let dmAddedRecords = [];
+
+let dmViewPage = 1;
+const DM_PAGE_SIZE = 20;
+
+function switchDmTab(tab, btn) {
+  document.getElementById('dmPanelView').style.display = tab==='view' ? '' : 'none';
+  document.getElementById('dmPanelAward').style.display = tab==='award' ? '' : 'none';
+  document.getElementById('dmPanelIndividual').style.display = tab==='individual' ? '' : 'none';
+  document.querySelectorAll('.dm-tab-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'rgba(255,255,255,0.02)';
+    b.style.color = 'var(--text-muted)';
+  });
+  btn.style.borderColor = 'rgba(79,156,249,0.5)';
+  btn.style.background = 'rgba(79,156,249,0.12)';
+  btn.style.color = 'var(--accent)';
+  if(tab==='view') renderDmView();
+}
+
+function renderDmView() { dmViewPage=1; updateDmView(); }
+
+function updateDmView() {
+  try {
+  const target = document.getElementById('dmViewTarget').value;
+  const yearVal = document.getElementById('dmViewYear').value;
+  const catVal = document.getElementById('dmViewCat').value;
+  const statusVal = document.getElementById('dmViewStatus').value;
+  const q = document.getElementById('dmViewSearch').value.toLowerCase();
+
+  // 포상유형/연도 필터는 awards만 해당
+  const showAwardFilters = target === 'awards';
+  document.getElementById('dmViewYearGroup').style.display = showAwardFilters ? '' : 'none';
+  document.getElementById('dmViewCatGroup').style.display = showAwardFilters ? '' : 'none';
+
+  let data, headers, rows;
+
+  if(target === 'awards') {
+    data = AWARDS.filter(a => {
+      if(yearVal && a.연도 !== yearVal) return false;
+      if(catVal && a.category !== catVal) return false;
+      if(q && !a.이름.toLowerCase().includes(q) && !a.부서.toLowerCase().includes(q) && !(a.직책||'').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    headers = ['연번','연도','유형','이름','부서','직책','일시','포상내용','선정기준','비고'];
+    const page = data.slice((dmViewPage-1)*DM_PAGE_SIZE, dmViewPage*DM_PAGE_SIZE);
+    document.getElementById('dmViewCount').innerHTML = `총 <strong style="color:var(--accent)">${data.length}</strong>건`;
+    document.getElementById('dmViewTableHead').innerHTML = `<tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+    document.getElementById('dmViewTableBody').innerHTML = page.length
+      ? page.map((a,i) => `<tr>
+          <td style="text-align:center;color:var(--text-muted);font-size:12px;">${(dmViewPage-1)*DM_PAGE_SIZE+i+1}</td>
+          <td><span class="year-badge">${a.연도}</span></td>
+          <td>${badgeHtml(a.category)}</td>
+          <td style="font-weight:600;">${a.이름}</td>
+          <td style="color:var(--text-muted)">${a.부서}</td>
+          <td style="color:var(--text-muted);font-size:12px;">${a.직책||''}</td>
+          <td style="color:var(--text-muted);font-size:12px;">${a.일시||''}</td>
+          <td style="font-size:12px;">${a.내용||''}</td>
+          <td style="font-size:12px;color:var(--text-muted);">${a.선정기준&&a.선정기준!=='nan'?a.선정기준:''}</td>
+          <td style="font-size:12px;color:var(--text-muted);">${a.비고&&a.비고!=='nan'?a.비고:''}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="10"><div class="empty"><div class="empty-icon">🔍</div>검색 결과 없음</div></td></tr>`;
+  } else {
+    data = INDIVIDUALS.filter(p => {
+      const empStatus = getEmployStatus(p);
+      if(statusVal && empStatus !== statusVal) return false;
+      if(q && !p.이름.toLowerCase().includes(q) && !p.부서.toLowerCase().includes(q) && !(p.직위||'').toLowerCase().includes(q) && !(p.상벌내용||'').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    headers = ['연번','이름','부서','직위','보유 포상이력','재직여부','관리'];
+    const page = data.slice((dmViewPage-1)*DM_PAGE_SIZE, dmViewPage*DM_PAGE_SIZE);
+    document.getElementById('dmViewCount').innerHTML = `총 <strong style="color:var(--accent)">${data.length}</strong>명`;
+    document.getElementById('dmViewTableHead').innerHTML = `<tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+    document.getElementById('dmViewTableBody').innerHTML = page.length
+      ? page.map((p,i) => {
+          const empStatus = getEmployStatus(p);
+          const globalIdx = INDIVIDUALS.indexOf(p);
+          return `<tr>
+            <td style="text-align:center;color:var(--text-muted);font-size:12px;">${(dmViewPage-1)*DM_PAGE_SIZE+i+1}</td>
+            <td style="font-weight:600;">${p.이름}</td>
+            <td style="color:var(--text-muted)">${p.부서}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${p.직위||''}</td>
+            <td style="font-size:12px;max-width:260px;word-break:break-all;">${p.상벌내용||'이력없음'}</td>
+            <td style="text-align:center;">${
+              empStatus === '퇴사'
+                ? `<span style="font-size:11px;color:var(--red);background:rgba(252,109,90,0.1);padding:3px 8px;border-radius:6px;">퇴사</span>`
+                : empStatus === '재입사'
+                  ? `<span style="font-size:11px;color:var(--purple);background:rgba(159,122,234,0.1);padding:3px 8px;border-radius:6px;">재입사</span>`
+                  : '<span style="font-size:11px;color:var(--green);background:rgba(56,217,169,0.1);padding:3px 8px;border-radius:6px;">재직 중</span>'
+            }</td>
+            <td style="text-align:center;white-space:nowrap;">
+              <button class="action-btn btn-edit" onclick="openEditModal(${globalIdx})">✏️ 수정</button>
+              &nbsp;
+              <button class="action-btn btn-delete" onclick="deleteIndiv(${globalIdx})">🗑️ 삭제</button>
+            </td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔍</div>검색 결과 없음</div></td></tr>`;
+  }
+  renderPagination('dmViewPagination', data.length, DM_PAGE_SIZE, dmViewPage, p=>{dmViewPage=p; updateDmView();});
+  } catch(e) {
+    document.getElementById('dmViewTableBody').innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:20px;text-align:center;">오류: ${e.message}</td></tr>`;
+    console.error('updateDmView error:', e);
+  }
+}
+
+function renderDataMgmt() {
+  const yearSel = document.getElementById('dmAwardYear');
+  if(yearSel && yearSel.options.length <= 1) {
+    YEARS.forEach(y => { const o = document.createElement('option'); o.value=y; o.textContent=y+'년'; yearSel.appendChild(o); });
+    ['2027','2028','2029','2030'].forEach(y => { const o = document.createElement('option'); o.value=y; o.textContent=y+'년'; yearSel.appendChild(o); });
+  }
+  // 조회탭 연도 셀렉트 초기화
+  const viewYearSel = document.getElementById('dmViewYear');
+  if(viewYearSel && viewYearSel.options.length <= 1) {
+    YEARS.forEach(y => { const o = document.createElement('option'); o.value=y; o.textContent=y+'년'; viewYearSel.appendChild(o); });
+  }
+  // 기본적으로 조회 패널 보이고 나머지 숨김
+  document.getElementById('dmPanelView').style.display = '';
+  document.getElementById('dmPanelAward').style.display = 'none';
+  document.getElementById('dmPanelIndividual').style.display = 'none';
+  // view 탭 버튼 active 스타일
+  document.querySelectorAll('.dm-tab-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'rgba(255,255,255,0.02)';
+    b.style.color = 'var(--text-muted)';
+  });
+  const viewBtn = document.getElementById('dmTabView');
+  if(viewBtn) {
+    viewBtn.style.borderColor = 'rgba(79,156,249,0.5)';
+    viewBtn.style.background = 'rgba(79,156,249,0.12)';
+    viewBtn.style.color = 'var(--accent)';
+  }
+  updateDmView();
+  renderDmRecentList();
+}
+
+function addAwardRecord() {
+  const year = document.getElementById('dmAwardYear').value;
+  const name = document.getElementById('dmAwardName').value.trim();
+  const dept = document.getElementById('dmAwardDept').value.trim();
+  if(!year || !name || !dept) {
+    showDmMsg('dmAwardMsg', '연도, 이름, 부서는 필수입니다.', '#fc6d5a');
+    return;
+  }
+  const cat = document.getElementById('dmAwardCategory').value;
+  const yearRecs = AWARDS.filter(a => a.연도===year);
+  const newSeq = (yearRecs.length ? Math.max(...yearRecs.map(a=>a.연번||0)) : 0) + 1;
+  const rec = {
+    연도: year, 구분: document.getElementById('dmAwardGubun').value,
+    내용: document.getElementById('dmAwardContent').value.trim() || cat,
+    일시: document.getElementById('dmAwardDate').value.trim(),
+    부서: dept, 직책: document.getElementById('dmAwardTitle').value.trim(),
+    이름: name,
+    선정기준: document.getElementById('dmAwardCriteria').value.trim(),
+    비고: document.getElementById('dmAwardRemark').value.trim(),
+    category: cat, 연번: newSeq
+  };
+  AWARDS.push(rec);
+  dmAddedRecords.push({type:'포상', data: rec});
+  showDmMsg('dmAwardMsg', `✅ "${name}" ${cat} 기록이 추가되었습니다.`, '#38d9a9');
+  ['dmAwardName','dmAwardDept','dmAwardTitle','dmAwardDate','dmAwardContent','dmAwardCriteria','dmAwardRemark'].forEach(id => document.getElementById(id).value='');
+  renderDmRecentList();
+  buildDashboard();
+}
+
+function addIndividualRecord() {
+  const name = document.getElementById('dmIndName').value.trim();
+  const dept = document.getElementById('dmIndDept').value.trim();
+  if(!name || !dept) {
+    showDmMsg('dmIndMsg', '이름과 부서는 필수입니다.', '#fc6d5a');
+    return;
+  }
+  const rec = {
+    연번: String(INDIVIDUALS.length+1),
+    이름: name, 부서: dept,
+    직위: document.getElementById('dmIndTitle').value.trim(),
+    상벌내용: document.getElementById('dmIndAwards').value.trim(),
+    퇴사여부: document.getElementById('dmIndResign').value.trim()
+  };
+  INDIVIDUALS.push(rec);
+  dmAddedRecords.push({type:'개인', data: rec});
+  showDmMsg('dmIndMsg', `✅ "${name}" 개인 현황이 추가되었습니다.`, '#38d9a9');
+  ['dmIndName','dmIndDept','dmIndTitle','dmIndAwards','dmIndResign'].forEach(id => document.getElementById(id).value='');
+  renderDmRecentList();
+}
+
+function showDmMsg(id, msg, color) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.color = color;
+  setTimeout(()=>{ el.textContent=''; }, 4000);
+}
+
+function renderDmRecentList() {
+  const el = document.getElementById('dmRecentList');
+  document.getElementById('dmAddedCount').textContent = dmAddedRecords.length + '건';
+  if(!dmAddedRecords.length) { el.innerHTML='<span style="color:var(--text-muted);">아직 추가된 기록이 없습니다.</span>'; return; }
+  el.innerHTML = dmAddedRecords.slice().reverse().map((r,i) => {
+    const d = r.data;
+    if(r.type==='포상') {
+      return `<div style="padding:7px 0;border-bottom:1px solid rgba(42,48,64,0.5);display:flex;gap:12px;align-items:center;">
+        <span style="color:var(--accent);font-weight:600;">[포상]</span>
+        <span style="font-weight:600;">${d.이름}</span>
+        <span style="color:var(--text-muted);">${d.부서}</span>
+        <span>${badgeHtml(d.category)}</span>
+        <span style="color:var(--text-muted);">${d.연도}년 연번 ${d.연번}</span>
+      </div>`;
+    } else {
+      return `<div style="padding:7px 0;border-bottom:1px solid rgba(42,48,64,0.5);display:flex;gap:12px;align-items:center;">
+        <span style="color:var(--green);font-weight:600;">[개인]</span>
+        <span style="font-weight:600;">${d.이름}</span>
+        <span style="color:var(--text-muted);">${d.부서} / ${d.직위||'-'}</span>
+        <span style="color:var(--text-muted);font-size:11px;">${d.상벌내용||'이력없음'}</span>
+      </div>`;
+    }
+  }).join('');
+}
+
+// ===== EXCEL EXPORT =====
+function makeExcelXml(headers, rows, sheetName) {
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const headerRow = headers.map(h=>`<Cell ss:StyleID="header"><Data ss:Type="String">${esc(h)}</Data></Cell>`).join('');
+  const dataRows = rows.map((r,i)=>{
+    const cells = r.map(v=>{
+      const isNum = typeof v==='number' || (typeof v==='string' && v!=='' && !isNaN(v) && !v.includes('/') && !v.includes('.'));
+      return `<Cell ss:StyleID="data"><Data ss:Type="${isNum?'Number':'String'}">${esc(v)}</Data></Cell>`;
+    }).join('');
+    return `<Row>${cells}</Row>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+  <Style ss:ID="header">
+    <Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11" ss:Name="Malgun Gothic"/>
+    <Interior ss:Color="#2B4A8C" ss:Pattern="Solid"/>
+    <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#FFFFFF"/></Borders>
+  </Style>
+  <Style ss:ID="data">
+    <Font ss:Name="Malgun Gothic" ss:Size="10"/>
+    <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+    <Borders>
+      <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#DDDDDD"/>
+      <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#DDDDDD"/>
+    </Borders>
+  </Style>
+</Styles>
+<Worksheet ss:Name="${esc(sheetName)}">
+<Table ss:DefaultRowHeight="18">
+  <Column ss:Width="35"/>
+  <Column ss:Width="70"/>
+  <Column ss:Width="100"/>
+  <Column ss:Width="70"/>
+  <Column ss:Width="250"/>
+  <Column ss:Width="80"/>
+  <Row ss:Height="22">${headerRow}</Row>
+${dataRows}
+</Table>
+</Worksheet>
+</Workbook>`;
+}
+
+function downloadExcel(xml, filename) {
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function exportFilteredExcel() {
+  const data = getNoAwardFiltered();
+  if(!data.length) { alert('조회 결과가 없습니다.'); return; }
+  const headers = ['연번','이름','부서','직위','보유 포상 이력','재직여부','퇴사일자'];
+  const rows = data.map((p,i) => {
+    return [i+1, p.이름, p.부서, p.직위||'', p.상벌내용||'이력없음', getEmployStatus(p), p.퇴사여부||''];
+  });
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  downloadExcel(makeExcelXml(headers, rows, '미수상자조회결과'), `미수상자조회_${today}.xls`);
+}
+
+function exportAllExcel() {
+  // 시트1: 포상 전체
+  const h1 = ['연번','연도','구분','포상유형','이름','부서','직책','일시','포상내용','선정기준','비고'];
+  const r1 = AWARDS.map((a,i) => [i+1, a.연도, a.구분, a.category, a.이름, a.부서, a.직책||'', a.일시||'', a.내용||'', a.선정기준||'', a.비고||'']);
+  // 시트2: 개인별 현황
+  const h2 = ['연번','이름','부서','직위','보유포상이력','퇴사여부'];
+  const r2 = INDIVIDUALS.map((p,i) => [i+1, p.이름, p.부서, p.직위||'', p.상벌내용||'', p.퇴사여부||'']);
+  
+  // 두 시트를 하나의 엑셀로
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const makeRows = (headers, rows) => {
+    const hr = headers.map(h=>`<Cell ss:StyleID="header"><Data ss:Type="String">${esc(h)}</Data></Cell>`).join('');
+    const dr = rows.map(r=>
+      '<Row>' + r.map(v=>`<Cell ss:StyleID="data"><Data ss:Type="String">${esc(v)}</Data></Cell>`).join('') + '</Row>'
+    ).join('\n');
+    return `<Row ss:Height="22">${hr}</Row>
+${dr}`;
+  };
+  
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+  <Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11" ss:Name="Malgun Gothic"/>
+    <Interior ss:Color="#2B4A8C" ss:Pattern="Solid"/>
+    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="data"><Font ss:Name="Malgun Gothic" ss:Size="10"/>
+    <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#DDDDDD"/></Borders>
+  </Style>
+</Styles>
+<Worksheet ss:Name="포상전체"><Table ss:DefaultRowHeight="18">
+${makeRows(h1,r1)}
+</Table></Worksheet>
+<Worksheet ss:Name="개인별포상현황"><Table ss:DefaultRowHeight="18">
+${makeRows(h2,r2)}
+</Table></Worksheet>
+</Workbook>`;
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  downloadExcel(xml, `포상관리시스템_전체_${today}.xls`);
+}
+
+// ===== 미수상자 탭에도 엑셀 다운로드 버튼 추가 (함수 재활용) =====
+
+// ===== 카테고리 현황 모달 =====
+function openCatModal(catKey, label, icon, color) {
+  const modal = document.getElementById('catModal');
+  document.getElementById('modalTitle').innerHTML = `<span style="color:${color}">${icon}</span> ${label} 현황`;
+
+  let data, isTotal = (catKey === '__total__');
+  if(isTotal) {
+    data = AWARDS.filter(a=>a.구분==='포상');
+  } else {
+    data = AWARDS.filter(a=>a.category===catKey);
+  }
+
+  // 통계 요약
+  const yearCounts = {};
+  YEARS.forEach(y=>{ yearCounts[y]=0; });
+  data.forEach(a=>{ if(yearCounts[a.연도]!==undefined) yearCounts[a.연도]++; });
+  const deptCounts = {};
+  data.forEach(a=>{ deptCounts[a.부서]=(deptCounts[a.부서]||0)+1; });
+  const topDept = Object.entries(deptCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('modalStatsRow').innerHTML = `
+    <div class="modal-stat" style="--card-color:${color}">
+      <div class="modal-stat-num" style="color:${color}">${data.length}</div>
+      <div class="modal-stat-label">총 건수</div>
+    </div>
+    ${isTotal ? '' : `
+    <div class="modal-stat" style="--card-color:${color}">
+      <div class="modal-stat-num" style="color:${color}">${new Set(data.map(a=>a.이름)).size}</div>
+      <div class="modal-stat-label">수상 인원</div>
+    </div>`}
+    <div class="modal-stat">
+      <div class="modal-stat-num" style="color:#38d9a9">${yearCounts[YEARS[0]]||0}</div>
+      <div class="modal-stat-label">${YEARS[0]}년</div>
+    </div>
+    <div class="modal-stat">
+      <div class="modal-stat-num" style="color:#9f7aea">${yearCounts[YEARS[1]]||0}</div>
+      <div class="modal-stat-label">${YEARS[1]}년</div>
+    </div>
+    ${topDept ? `<div class="modal-stat">
+      <div class="modal-stat-num" style="color:#f0b429;font-size:14px;word-break:keep-all;">${topDept[0]}</div>
+      <div class="modal-stat-label">최다 부서 (${topDept[1]}건)</div>
+    </div>` : ''}
+  `;
+
+  // 연도별 소계 행 + 전체 목록
+  const grouped = {};
+  YEARS.forEach(y=>{ grouped[y]=[]; });
+  data.forEach(a=>{ if(grouped[a.연도]) grouped[a.연도].push(a); });
+
+  let headHtml, bodyHtml;
+  if(isTotal) {
+    headHtml = `<tr><th>연도</th><th style="text-align:center;">순번</th><th>유형</th><th>이름</th><th>부서</th><th>직책</th><th>일시</th><th>포상내용</th></tr>`;
+    let seq=0;
+    bodyHtml = YEARS.flatMap(y => {
+      const rows = grouped[y]||[];
+      if(!rows.length) return [];
+      return [
+        `<tr style="background:rgba(79,156,249,0.06)"><td colspan="8" style="font-size:12px;font-weight:700;color:var(--accent);padding:8px 14px;">${y}년 — ${rows.length}건</td></tr>`,
+        ...rows.map(a => {
+          seq++;
+          return `<tr>
+            <td><span class="year-badge">${a.연도}</span></td>
+            <td style="text-align:center;color:var(--text-muted);font-size:12px;">${seq}</td>
+            <td>${badgeHtml(a.category)}</td>
+            <td style="font-weight:600;">${a.이름}</td>
+            <td style="color:var(--text-muted)">${a.부서}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${a.직책||''}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${a.일시||''}</td>
+            <td style="font-size:12px;">${a.내용||''}</td>
+          </tr>`;
+        })
+      ];
+    }).join('');
+  } else {
+    headHtml = `<tr><th style="text-align:center;">연번</th><th>연도</th><th>이름</th><th>부서</th><th>직책</th><th>일시</th><th>비고</th></tr>`;
+    let seq=0;
+    bodyHtml = YEARS.flatMap(y => {
+      const rows = grouped[y]||[];
+      if(!rows.length) return [];
+      return [
+        `<tr style="background:rgba(79,156,249,0.06)"><td colspan="7" style="font-size:12px;font-weight:700;color:var(--accent);padding:8px 14px;">${y}년 — ${rows.length}건</td></tr>`,
+        ...rows.map(a => {
+          seq++;
+          return `<tr>
+            <td style="text-align:center;color:var(--text-muted);font-size:12px;">${seq}</td>
+            <td><span class="year-badge">${a.연도}</span></td>
+            <td style="font-weight:600;">${a.이름}</td>
+            <td style="color:var(--text-muted)">${a.부서}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${a.직책||''}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${a.일시||''}</td>
+            <td style="font-size:12px;color:var(--text-muted);">${a.비고&&a.비고!=='nan'?a.비고:''}</td>
+          </tr>`;
+        })
+      ];
+    }).join('');
+  }
+
+  if(!bodyHtml) bodyHtml = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div>데이터 없음</div></td></tr>`;
+
+  document.getElementById('modalTableHead').innerHTML = headHtml;
+  document.getElementById('modalTableBody').innerHTML = bodyHtml;
+  modal.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeCatModal() {
+  document.getElementById('catModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ===== 개인 이력 수정/삭제 =====
+let editingIndivIndex = null;
+
+function openEditModal(globalIdx) {
+  editingIndivIndex = globalIdx;
+  const p = INDIVIDUALS[globalIdx];
+  document.getElementById('editName').value = p.이름 || '';
+  document.getElementById('editDept').value = p.부서 || '';
+  document.getElementById('editTitle').value = p.직위 || '';
+  document.getElementById('editAwards').value = p.상벌내용 || '';
+  document.getElementById('editResign').value = p.퇴사여부 || '';
+  document.getElementById('editModalMsg').textContent = '';
+  document.getElementById('editModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  document.body.style.overflow='';
+  editingIndivIndex = null;
+}
+
+function saveEditModal() {
+  const name = document.getElementById('editName').value.trim();
+  const dept = document.getElementById('editDept').value.trim();
+  if(!name || !dept) {
+    document.getElementById('editModalMsg').textContent = '이름과 부서는 필수입니다.';
+    document.getElementById('editModalMsg').style.color = 'var(--red)';
+    return;
+  }
+  INDIVIDUALS[editingIndivIndex] = {
+    ...INDIVIDUALS[editingIndivIndex],
+    이름: name, 부서: dept,
+    직위: document.getElementById('editTitle').value.trim(),
+    상벌내용: document.getElementById('editAwards').value.trim(),
+    퇴사여부: document.getElementById('editResign').value.trim()
+  };
+  document.getElementById('editModalMsg').textContent = '✅ 저장되었습니다.';
+  document.getElementById('editModalMsg').style.color = 'var(--green)';
+  setTimeout(()=>{
+    closeEditModal();
+    buildDashboard();
+    updateDmView();
+    renderPeople();
+    renderCategory();
+    renderNoAward();
+    renderYearly();
+  }, 800);
+}
+
+function deleteIndiv(globalIdx) {
+  const p = INDIVIDUALS[globalIdx];
+  if(!confirm(`"${p.이름}" (${p.부서}) 이력을 삭제하시겠습니까?\n이 작업은 세션 내에서만 유효합니다.`)) return;
+  INDIVIDUALS.splice(globalIdx, 1);
+  buildDashboard();
+  updateDmView();
+  renderPeople();
+  renderCategory();
+  renderNoAward();
+  renderYearly();
+}
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){
+    closeCatModal();
+    closeEditModal();
+  }
+});
+
+// Init
+buildDashboard();
+initFilters();
+buildCatFilter();
+renderNoAward();
+</script>
+</body>
+</html>
